@@ -2,13 +2,6 @@ spinnaker:
   modules:
     - name: clouddriver
       artifact: clouddriver-web
-      properties:
-        cf.account.name: gturnquist
-        cf.account.password: supersecret
-#      patterns:
-#        foo: bar
-#      services:
-#        - spinnaker-redis
     - name: deck
       artifact: deck-ui
       properties:
@@ -20,12 +13,8 @@ spinnaker:
         orca.baseUrl: ${services.orca.baseUrl}
     - name: front50
       artifact: front50-web
-#      services:
-#        - spinnaker-redis
     - name: gate
       artifact: gate-web
-#      services:
-#        - spinnaker-redis
     - name: igor
       artifact: igor-web
     - name: orca
@@ -42,8 +31,9 @@ spinnaker:
 #      services:
 #        - spinnaker-redis
   properties:
+    JBP_CONFIG_DEBUG: '{enabled: true}' # TODO: Remove
     providers.cf.enabled: true
-    providers.cf.primaryCredentials.name: ${accountName}
+    providers.cf.primaryCredentials.name: ${deck.primaryAccount}
     services.slack.enabled: true
     services.slack.token: foo
 #    spring.config.location: https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker-local.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}-local.yml
@@ -70,16 +60,13 @@ spinnaker:
     services.orca.host: orca
     services.orca.port: 80
     services.orca.baseUrl: ${services.default.protocol}://${services.orca.host}${namespace}.${deck.domain}:${services.orca.port}
-    services.default.primaryAccountName: ${accountName}
+    services.default.primaryAccountName: ${deck.primaryAccount}
     spinnaker.baseUrl: ${services.default.protocol}://deck${namespace}.${deck.domain}
     cassandra.enabled: ${spinnaker.cassandra.enabled}
     spinnaker.cassandra.enabled: false
     spinnaker.cassandra.embedded: ${spinnaker.cassandra.enabled}
     spinnaker.redis.enabled: true
     spinnaker.inMemory.enabled: true
-  patterns:
-    domain: ${deck.domain}
-    accountName: ${deck.primaryAccount}
 
 security:
   user:

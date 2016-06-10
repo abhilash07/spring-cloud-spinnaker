@@ -20,7 +20,8 @@ import static java.util.stream.Stream.concat;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.AbstractMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,13 +184,13 @@ public class ModuleService {
 
 		return (details.getName().equals("deck")
 					? pluginSettingsJs(resources[0], data)
-					: resources[0]);
+					: addConfigFile(details, resources[0], ctx));
 	}
 
 	/**
 	 * Create an application deployer based on the module details
 	 *
-	 * TODO: Overhaul once buildpack is overridable in the deployer.
+	 * TODO: Overhaul once buildpack is overrideable in the deployer.
 	 *
 	 * @param details
 	 * @return
@@ -234,8 +236,7 @@ public class ModuleService {
 	}
 
 	/**
-	 * Merge top level properties and module-specific ones. Then transform them based on patterns into a
-	 * final set of properties for usage to deploy modules.
+	 * Merge top level properties and module-specific ones.
 	 *
 	 * @param details
 	 * @param data
@@ -247,8 +248,8 @@ public class ModuleService {
 				spinnakerConfiguration.getProperties().entrySet().stream(),
 				details.getProperties().entrySet().stream()
 		).collect(Collectors.toMap(
-				Map.Entry::getKey,
-				e -> translateTemplatedValue(spinnakerConfiguration, details, e, data),
+				e -> e.getKey().replace("&lsq;", "[").replace("&rsq;", "]"),
+				e -> e.getValue().replace("${module}", details.getName()),
 				(a, b) -> b));
 
 		data.entrySet().stream()
@@ -257,33 +258,61 @@ public class ModuleService {
 		return properties;
 	}
 
-	private static String translateTemplatedValue(SpinnakerConfiguration spinnakerConfiguration, ModuleDetails details, Map.Entry<String, String> e, Map<String, String> data) {
-		return preprocessPatterns(spinnakerConfiguration, details, data)
-				.reduce(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()), (accumEntry, patternEntry) -> {
-					String newValue = accumEntry.getValue().replace("${" + patternEntry.getKey() + "}", patternEntry.getValue());
-					accumEntry.setValue(newValue);
-					return accumEntry;
-				})
-				.getValue()
-				.replace("${module}", details.getName());
+	/**
+	 * While copying in a module's JAR, add it's related application.yml file
+	 *
+	 * @param details
+	 * @param resource
+	 * @return
+	 */
+	private static Resource addConfigFile(ModuleDetails details, Resource resource, ApplicationContext ctx) {
+
+		final ByteArrayOutputStream newJarByteStream = new ByteArrayOutputStream();
+
+		try (
+			ZipInputStream inputJarStream = new ZipInputStream(resource.getInputStream());
+			ZipOutputStream newModuleJarFile = new ZipOutputStream(newJarByteStream)) {
+
+			insertConfigFile(details, ctx, newModuleJarFile);
+
+			ZipEntry entry;
+			while ((entry = inputJarStream.getNextEntry()) != null) {
+				passThroughFileEntry(inputJarStream, newModuleJarFile, entry);
+			}
+
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		try {
+			if (log.isDebugEnabled()) {
+				Path file = Files.createTempFile(details.getName() + "-preview", ".jar");
+				log.info("Dumping JAR contents to " + file);
+				Files.write(file, newJarByteStream.toByteArray());
+				file.toFile().deleteOnExit();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		return new InMemoryResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
 	}
 
-	private static Stream<Map.Entry<String, String>> preprocessPatterns(SpinnakerConfiguration spinnakerConfiguration, ModuleDetails details, Map<String, String> data) {
-		return
-			concat(spinnakerConfiguration.getPatterns().entrySet().stream(), details.getPatterns().entrySet().stream())
-				.map(patternEntry -> {
-					String value = data.entrySet().stream()
-							.reduce(new AbstractMap.SimpleEntry<>(patternEntry.getKey(), patternEntry.getValue()), (accumEntry, dataEntry) -> {
-								String newValue = accumEntry.getValue().replace("${" + dataEntry.getKey() + "}", dataEntry.getValue());
-								accumEntry.setValue(newValue);
-								return accumEntry;
-							})
-							.getValue();
-					return new AbstractMap.SimpleEntry<>(patternEntry.getKey(), value);
-				});
+	private static void insertConfigFile(ModuleDetails details, ApplicationContext ctx, ZipOutputStream newModuleJarFile) throws IOException {
+		JarEntry newEntry = new JarEntry(details.getName() + ".yml");
+		newEntry.setTime(System.currentTimeMillis());
+		newModuleJarFile.putNextEntry(newEntry);
 
+		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/config/" + details.getName() + ".yml";
+		final Resource[] configFiles = ctx.getResources(locationPattern);
 
+		Assert.state(configFiles.length == 1, "Number of resources MUST be 1");
+
+		StreamUtils.copy(configFiles[0].getInputStream(), newModuleJarFile);
+
+		newModuleJarFile.closeEntry();
 	}
+
 
 	private org.springframework.core.io.Resource pluginSettingsJs(org.springframework.core.io.Resource originalDeckJarFile, Map<String, String> data) {
 		try {
@@ -346,16 +375,13 @@ public class ModuleService {
 		newDeckJarFile.closeEntry();
 	}
 
-	private static void passThroughFileEntry(ZipInputStream zipInputStream, JarOutputStream newDeckJarFile, ZipEntry entry) throws IOException {
-		JarEntry newEntry = new JarEntry(entry.getName());
-		newEntry.setTime(entry.getTime());
-		newDeckJarFile.putNextEntry(newEntry);
+	private static void passThroughFileEntry(ZipInputStream zipInputStream, ZipOutputStream newJarFile, ZipEntry entry) throws IOException {
+		JarEntry newEntry = new JarEntry(entry);
+		newJarFile.putNextEntry(newEntry);
 		if (!entry.isDirectory()) {
-			StreamUtils.copy(zipInputStream, newDeckJarFile);
+			StreamUtils.copy(zipInputStream, newJarFile);
 		}
-		newDeckJarFile.closeEntry();
+		newJarFile.closeEntry();
 	}
-
-
 
 }

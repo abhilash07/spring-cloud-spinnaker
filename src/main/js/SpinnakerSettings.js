@@ -26,30 +26,35 @@ class SpinnakerSettings extends React.Component {
 						<label className={labelLayout}>Target API</label>
 						<input className={inputLayout} type="text"
 							   name="spinnaker.api"
+							   placeholder="API to install Spinnaker, e.g. https://api.run.pivotal.io"
 							   onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Target Organization</label>
 						<input className={inputLayout} type="text"
 							   name="spinnaker.org"
+							   placeholder="Organization to install Spinnaker"
 							   onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Target Space</label>
 						<input className={inputLayout} type="text"
 							   name="spinnaker.space"
+							   placeholder="Space to install Spinnaker"
 							   onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Target Email</label>
 						<input className={inputLayout} type="text"
 							   name="spinnaker.email"
+							   placeholder="Login email to install Spinnaker"
 							   onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Target Password</label>
 						<input className={inputLayout} type="password"
 							   name="spinnaker.password"
+							   placeholder="Password to install Spinnaker"
 							   onChange={this.handleChange} />
 					</li>
 				</ul>

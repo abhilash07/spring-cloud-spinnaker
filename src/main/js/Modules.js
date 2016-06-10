@@ -62,6 +62,7 @@ class Modules extends React.Component {
 		}
 
 		if (moduleDetails.deploymentId.startsWith('clouddriver')) {
+			data[this.props.settings.primaryAccount] = this.props.settings[this.props.settings.primaryAccount]
 			data[this.props.settings.accountName] = this.props.settings[this.props.settings.accountName]
 			data[this.props.settings.accountPassword] = this.props.settings[this.props.settings.accountPassword]
 			data[this.props.settings.repoUsername] = this.props.settings[this.props.settings.repoUsername]

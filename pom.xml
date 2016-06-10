@@ -143,7 +143,10 @@
 			</resource>
 			<resource>
 				<directory>clouddriver</directory>
-				<includes><include>clouddriver-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>clouddriver-web/build/libs/*.jar</include>
+					<include>clouddriver-web/config/clouddriver.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 			<resource>
@@ -153,27 +156,42 @@
 			</resource>
 			<resource>
 				<directory>echo</directory>
-				<includes><include>echo-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>echo-web/build/libs/*.jar</include>
+					<include>echo-web/config/echo.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 			<resource>
 				<directory>front50</directory>
-				<includes><include>front50-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>front50-web/build/libs/*.jar</include>
+					<include>front50-web/config/front50.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 			<resource>
 				<directory>gate</directory>
-				<includes><include>gate-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>gate-web/build/libs/*.jar</include>
+					<include>gate-web/config/gate.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 			<resource>
 				<directory>igor</directory>
-				<includes><include>igor-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>igor-web/build/libs/*.jar</include>
+					<include>igor-web/config/igor.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 			<resource>
 				<directory>orca</directory>
-				<includes><include>orca-web/build/libs/*.jar</include></includes>
+				<includes>
+					<include>orca-web/build/libs/*.jar</include>
+					<include>orca-web/config/orca.yml</include>
+				</includes>
 				<targetPath>spinnaker-modules</targetPath>
 			</resource>
 		</resources>
