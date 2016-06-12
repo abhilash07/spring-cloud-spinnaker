@@ -1,12 +1,15 @@
 language: java
 jdk:
 - oraclejdk8
+cache:
+  directories:
+  - $HOME/.m2
 sudo: required
 before_install:
 - wget -O cf-linux-x86_64.tgz "https://cli.run.pivotal.io/stable?release=linux64-binary"
 - tar xvfz cf-linux-x86_64.tgz
 - chmod 755 ./cf
+- ./build_spinnaker.sh
 after_success:
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ]; then
   ./deploy ; fi
-  
