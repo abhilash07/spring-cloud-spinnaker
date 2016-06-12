@@ -26,7 +26,7 @@ class Settings extends React.Component {
 						<label className={labelLayout}>Redis Service</label>
 						<input className={inputLayout} type="text"
 							   placeholder="Name of Redis service to bind to"
-							   name="spring.cloud.deployer.cloudfoundry.defaults.services" onChange={this.handleChange} />
+							   name="spring.cloud.deployer.cloudfoundry.services" onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Default Org</label>
@@ -99,12 +99,6 @@ class Settings extends React.Component {
 						<input className={inputLayout} type="text"
 							   placeholder="Listing of all accounts (e.g. prod,staging,dev)"
 							   name="deck.primaryAccounts" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Namespace</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Logical name for each module of Spinnaker (e.g. alice)"
-							   name="all.namespace" onChange={this.handleChange} />
 					</li>
 				</ul>
 			</div>

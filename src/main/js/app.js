@@ -17,7 +17,7 @@ class Application extends React.Component {
 			space: 'spinnaker.space',
 			email: 'spinnaker.email',
 			password: 'spinnaker.password',
-			services: 'spring.cloud.deployer.cloudfoundry.defaults.services',
+			services: 'spring.cloud.deployer.cloudfoundry.services',
 			accountName: 'cf.account.name',
 			accountPassword: 'cf.account.password',
 			repoUsername: 'cf.repo.username',

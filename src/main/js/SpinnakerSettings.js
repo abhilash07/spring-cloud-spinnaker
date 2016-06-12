@@ -57,6 +57,12 @@ class SpinnakerSettings extends React.Component {
 							   placeholder="Password to install Spinnaker"
 							   onChange={this.handleChange} />
 					</li>
+					<li className={lineItemLayout}>
+						<label className={labelLayout}>Namespace</label>
+						<input className={inputLayout} type="text"
+							   placeholder="Logical name for each module of Spinnaker (e.g. alice)"
+							   name="all.namespace" onChange={this.handleChange} />
+					</li>
 				</ul>
 			</div>
 		)
