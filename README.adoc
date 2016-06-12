@@ -1,5 +1,7 @@
 image:https://travis-ci.org/spring-cloud/spring-cloud-spinnaker.svg?branch=master["Build Status", link="https://travis-ci.org/spring-cloud/spring-cloud-spinnaker"]
 
+image:https://badge.waffle.io/spring-cloud/spring-cloud-spinnaker.png?label=ready&title=Ready["Stories in Ready", link="https://waffle.io/spring-cloud/spring-cloud-spinnaker"]
+
 = Spring Cloud Spinnaker
 
 Spring Cloud Spinnaker is a Spring Boot web application used to deploy all the parts of http://spinnaker.io[Spinnaker]
