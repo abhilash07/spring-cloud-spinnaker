@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Login to PWS
+./cf api https://api.run.pivotal.io
+./cf auth $CF_USERNAME $CF_PASSWORD
+
+./cf target -o FrameworksAndRuntimes -s development
+./cf push spinnaker-deployer -p target/spring-cloud-spinnaker-*.jar
