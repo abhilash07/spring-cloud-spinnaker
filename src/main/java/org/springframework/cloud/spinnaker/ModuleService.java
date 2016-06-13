@@ -20,8 +20,6 @@ import static java.util.stream.Stream.concat;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -284,16 +282,16 @@ public class ModuleService {
 			throw new RuntimeException(e);
 		}
 
-		try {
-			if (log.isDebugEnabled()) {
-				Path file = Files.createTempFile(details.getName() + "-preview", ".jar");
-				log.info("Dumping JAR contents to " + file);
-				Files.write(file, newJarByteStream.toByteArray());
-				file.toFile().deleteOnExit();
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+//		try {
+//			if (log.isDebugEnabled()) {
+//				Path file = Files.createTempFile(details.getName() + "-preview", ".jar");
+//				log.info("Dumping JAR contents to " + file);
+//				Files.write(file, newJarByteStream.toByteArray());
+//				file.toFile().deleteOnExit();
+//			}
+//		} catch (IOException e) {
+//			throw new RuntimeException(e);
+//		}
 
 		return new InMemoryResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
 	}
