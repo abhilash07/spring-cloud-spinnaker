@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
@@ -66,17 +67,27 @@ public class ModuleService {
 	public static final String DEFAULT_DOMAIN = "cfapps.io"; // PWS
 	public static final String DEFAULT_PRIMARY_ACCOUNT = "prod";
 
+	// Metrics
+	private static final String METRICS_DEPLOYED = "spinnaker.deployment.%s.deployed";
+	private static final String METRICS_UNDEPLOYED = "spinnaker.deployment.%s.undeployed";
+
 	private final SpinnakerConfiguration spinnakerConfiguration;
 
 	private final CloudFoundryAppDeployerFactory appDeployerFactory;
 
 	private final ApplicationContext ctx;
 
-	public ModuleService(SpinnakerConfiguration spinnakerConfiguration, CloudFoundryAppDeployerFactory appDeployerFactory, ApplicationContext ctx) {
+	private final CounterService counterService;
+
+	public ModuleService(SpinnakerConfiguration spinnakerConfiguration,
+						 CloudFoundryAppDeployerFactory appDeployerFactory,
+						 ApplicationContext ctx,
+						 CounterService counterService) {
 
 		this.spinnakerConfiguration = spinnakerConfiguration;
 		this.appDeployerFactory = appDeployerFactory;
 		this.ctx = ctx;
+		this.counterService = counterService;
 	}
 
 	/**
@@ -126,6 +137,8 @@ public class ModuleService {
 				artifactToDeploy,
 				properties
 		));
+
+		counterService.increment(String.format(METRICS_DEPLOYED, module));
 	}
 
 	/**
@@ -134,8 +147,9 @@ public class ModuleService {
 	 * @param name
 	 */
 	public void undeploy(String name, String api, String org, String space, String email, String password, String namespace) {
-		final CloudFoundryAppDeployer appDeployer = appDeployerFactory.getObject(api, org, space, email, password, namespace);
-		appDeployer.undeploy(name);
+		appDeployerFactory.getObject(api, org, space, email, password, namespace).undeploy(name);
+
+		counterService.increment(String.format(METRICS_UNDEPLOYED, name));
 	}
 
 	/**

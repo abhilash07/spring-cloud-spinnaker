@@ -37,6 +37,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
@@ -200,8 +201,14 @@ public class ModuleServiceTests {
 		@Bean
 		ModuleService moduleService(SpinnakerConfiguration spinnakerConfiguration,
 									CloudFoundryAppDeployerFactory appDeployerFactoryBean,
-									ApplicationContext ctx) {
-			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx);
+									ApplicationContext ctx,
+									CounterService counterService) {
+			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService);
+		}
+
+		@Bean
+		CounterService counterService() {
+			return mock(CounterService.class);
 		}
 
 	}
