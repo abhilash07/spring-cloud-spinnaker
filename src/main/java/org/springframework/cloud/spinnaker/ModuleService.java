@@ -46,8 +46,8 @@ import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeploy
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.util.InMemoryResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -75,13 +75,13 @@ public class ModuleService {
 
 	private final CloudFoundryAppDeployerFactory appDeployerFactory;
 
-	private final ApplicationContext ctx;
+	private final ResourcePatternResolver ctx;
 
 	private final CounterService counterService;
 
 	public ModuleService(SpinnakerConfiguration spinnakerConfiguration,
 						 CloudFoundryAppDeployerFactory appDeployerFactory,
-						 ApplicationContext ctx,
+						 ResourcePatternResolver ctx,
 						 CounterService counterService) {
 
 		this.spinnakerConfiguration = spinnakerConfiguration;
@@ -184,8 +184,8 @@ public class ModuleService {
 	}
 
 	private Resource findArtifact(ModuleDetails details,
-						ApplicationContext ctx,
-						Map<String, String> data) throws IOException {
+								  ResourcePatternResolver ctx,
+								  Map<String, String> data) throws IOException {
 
 		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar";
 		final org.springframework.core.io.Resource[] resources = ctx.getResources(locationPattern);
@@ -277,7 +277,7 @@ public class ModuleService {
 	 * @param resource
 	 * @return
 	 */
-	private static Resource addConfigFile(ModuleDetails details, Resource resource, ApplicationContext ctx) {
+	private static Resource addConfigFile(ModuleDetails details, Resource resource, ResourcePatternResolver ctx) {
 
 		final ByteArrayOutputStream newJarByteStream = new ByteArrayOutputStream();
 
@@ -310,7 +310,7 @@ public class ModuleService {
 		return new InMemoryResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
 	}
 
-	private static void insertConfigFile(ModuleDetails details, ApplicationContext ctx, ZipOutputStream newModuleJarFile) throws IOException {
+	private static void insertConfigFile(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
 		JarEntry newEntry = new JarEntry(details.getName() + ".yml");
 		newEntry.setTime(System.currentTimeMillis());
 		newModuleJarFile.putNextEntry(newEntry);

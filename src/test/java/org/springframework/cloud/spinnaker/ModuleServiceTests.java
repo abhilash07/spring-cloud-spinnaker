@@ -24,6 +24,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -49,7 +51,10 @@ import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
@@ -203,7 +208,18 @@ public class ModuleServiceTests {
 									CloudFoundryAppDeployerFactory appDeployerFactoryBean,
 									ApplicationContext ctx,
 									CounterService counterService) {
-			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService);
+			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, mockPatternResolver(ctx), counterService);
+		}
+
+		@Bean
+		ResourcePatternResolver mockPatternResolver(ApplicationContext ctx) {
+			ResourcePatternResolver mockResolver = mock(ResourcePatternResolver.class);
+			try {
+				when(mockResolver.getResources(any())).thenReturn(ctx.getResources("classpath:/echo-web-test.jar"));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			return mockResolver;
 		}
 
 		@Bean

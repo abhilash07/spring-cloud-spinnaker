@@ -9,7 +9,8 @@ before_install:
 - wget -O cf-linux-x86_64.tgz "https://cli.run.pivotal.io/stable?release=linux64-binary"
 - tar xvfz cf-linux-x86_64.tgz
 - chmod 755 ./cf
-- ./build_spinnaker.sh
+- if [ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ]; then
+  ./build_spinnaker.sh ; fi
 after_success:
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ]; then
   ./deploy ; fi
