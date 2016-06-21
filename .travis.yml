@@ -10,7 +10,7 @@ before_install:
 - tar xvfz cf-linux-x86_64.tgz
 - chmod 755 ./cf
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ]; then
-  ./build_spinnaker.sh ; fi
+  ./build_spinnaker.sh all ; fi
 after_success:
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ]; then
   ./deploy ; fi

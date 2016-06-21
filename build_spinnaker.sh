@@ -75,13 +75,39 @@ buildDeck() {
 
 }
 
-build clouddriver
-build echo
-build front50
-build gate
-build igor
-build orca
+modules="clouddriver echo front50 gate igor orca deck"
 
-buildDeck deck
-
-
+if [ "$1" = "" ]; then
+	echo
+	echo "Usage: ./build_spinnaker.sh [all|clouddriver|echo|front50|gate|igor|orca|deck]"
+	echo
+	exit
+elif [ "$1" = "all" ]; then
+	echo
+	echo "Building all modules for Spinnaker..."
+	echo
+	for module in $modules
+	do
+		echo "Building $module..."
+		if [ "$module" = "deck" ]; then
+			buildDeck $module
+		else
+			build $module
+		fi
+	done
+	exit
+elif [[ $modules =~ $1 ]]; then
+	echo
+	echo "$1 is a valid member of [$modules]. Building..."
+	echo
+	if [ "$1" = "deck" ]; then
+		buildDeck $1
+	else
+		build $1
+	fi
+else
+	echo
+	echo "'$1' is not a recognized option. Aborting."
+	echo
+    exit 1
+fi;
