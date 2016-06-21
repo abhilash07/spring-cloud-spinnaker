@@ -65,7 +65,7 @@ public class ModuleService {
 	private static final Logger log = LoggerFactory.getLogger(ModuleService.class);
 
 	public static final String DEFAULT_DOMAIN = "cfapps.io"; // PWS
-	public static final String DEFAULT_PRIMARY_ACCOUNT = "prod";
+	public static final String DEFAULT_PRIMARY_ACCOUNT = "production";
 
 	// Metrics
 	private static final String METRICS_DEPLOYED = "spinnaker.deployment.%s.deployed";
@@ -375,6 +375,7 @@ public class ModuleService {
 			String settingsJs = StreamUtils.copyToString(zipInputStream, Charset.defaultCharset());;
 			settingsJs = settingsJs.replace("{gate}", "https://gate" + data.getOrDefault("namespace", "") + "." + data.getOrDefault("deck.domain", DEFAULT_DOMAIN));
 			settingsJs = settingsJs.replace("{primaryAccount}", data.getOrDefault("deck.primaryAccount", DEFAULT_PRIMARY_ACCOUNT));
+			settingsJs = settingsJs.replace("{defaultOrg}", data.getOrDefault("providers.cf.defaultOrg", ""));
 			final String primaryAccounts = data.getOrDefault("deck.primaryAccounts", DEFAULT_PRIMARY_ACCOUNT);
 			final String[] primaryAccountsArray = primaryAccounts.split(",");
 			final List<String> accounts = Arrays.stream(primaryAccountsArray)

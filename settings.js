@@ -19,7 +19,8 @@ window.spinnakerSettings = {
     cf: {
       defaults: {
         account: '{primaryAccount}',
-        region: 'production'
+        region: '{defaultOrg}',
+        zone: '{primaryAccount}'
       },
       primaryAccounts: '{primaryAccounts}'
     },

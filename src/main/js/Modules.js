@@ -81,6 +81,7 @@ class Modules extends React.Component {
 		if (moduleDetails.deploymentId.startsWith('deck')) {
 			data[this.props.settings.primaryAccount] = this.props.settings[this.props.settings.primaryAccount]
 			data[this.props.settings.primaryAccounts] = this.props.settings[this.props.settings.primaryAccounts]
+			data['providers.cf.defaultOrg'] = this.props.settings['providers.cf.defaultOrg']
 		}
 
 		data[this.props.settings.domain] = this.props.settings[this.props.settings.domain]
