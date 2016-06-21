@@ -71,7 +71,8 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 				.target(org, space)
 				.build();
 
-		return new CloudFoundryAppDeployer(props, operations, client);
+		// TODO: Possibly utilize AppNameGenerator to generate appName.
+		return new CloudFoundryAppDeployer(props, operations, client, appName -> appName);
 	}
 
 	private static String getKey(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
