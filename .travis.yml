@@ -5,7 +5,11 @@ cache:
   directories:
   - $HOME/.m2
 sudo: required
+git:
+  submodules: false
 before_install:
+- git submodule init
+- git submodule update --remote
 - wget -O cf-linux-x86_64.tgz "https://cli.run.pivotal.io/stable?release=linux64-binary"
 - tar xvfz cf-linux-x86_64.tgz
 - chmod 755 ./cf

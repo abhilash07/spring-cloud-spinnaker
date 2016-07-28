@@ -16,15 +16,19 @@
 package org.springframework.cloud.spinnaker;
 
 import static java.util.stream.Stream.concat;
+import static org.cloudfoundry.util.DelayUtils.exponentialBackOff;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -36,12 +40,19 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
+import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.cloudfoundry.operations.applications.GetApplicationRequest;
+import org.cloudfoundry.operations.applications.RestartApplicationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
+import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
@@ -130,13 +141,38 @@ public class ModuleService {
 		final org.springframework.core.io.Resource artifactToDeploy = findArtifact(details, ctx, data);
 		final Map<String, String> properties = getProperties(spinnakerConfiguration, details, data);
 
+		CloudFoundryClient client = DefaultAppDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
+		CloudFoundryOperations operations = DefaultAppDeployerFactory.getOperations(org, space, client);
+		CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+
 		log.debug("Uploading " + artifactToDeploy + "...");
 
-		getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace).deploy(new AppDeploymentRequest(
+		String deploymentId = appDeployer.deploy(new AppDeploymentRequest(
 				new AppDefinition(details.getName() + namespace, Collections.emptyMap()),
 				artifactToDeploy,
-				properties
-		));
+				properties));
+
+		Mono.defer(() -> Mono.just(appDeployer.status(deploymentId)))
+			.where(appStatus ->
+				appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed || appStatus.getState() == DeploymentState.deploying)
+			.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+			.then(s -> operations.applications()
+				.get(GetApplicationRequest.builder()
+					.name(details.getName() + namespace)
+					.build())
+				.map(applicationDetail -> applicationDetail.getId()))
+			.then(applicationId -> client.applicationsV2()
+				.update(UpdateApplicationRequest.builder()
+					.applicationId(applicationId)
+					.environmentJsons(properties)
+					.build()))
+				.doOnSuccess(v -> log.debug(String.format("Setting individual env variables for %s to %s", details.getName() + namespace, properties)))
+				.doOnError(e -> log.error(String.format("Unable to set individual env variables for app %s", details.getName() + namespace)))
+			.then(response -> operations.applications()
+				.restart(RestartApplicationRequest.builder()
+					.name(details.getName() + namespace)
+					.build()))
+			.subscribe();
 
 		counterService.increment(String.format(METRICS_DEPLOYED, module));
 	}
@@ -397,4 +433,18 @@ public class ModuleService {
 		newJarFile.closeEntry();
 	}
 
+	private static BiFunction<String, String, String> collectStates() {
+		return (totalState, instanceState) -> {
+			log.info("Total state = " + totalState + " Instance state = " + instanceState);
+			if ("RUNNING".equals(instanceState) || "RUNNING".equals(totalState)) {
+				return "RUNNING";
+			}
+
+			if ("FLAPPING".equals(instanceState) || "CRASHED".equals(instanceState)) {
+				return "FAILED";
+			}
+
+			return totalState;
+		};
+	}
 }

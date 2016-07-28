@@ -58,21 +58,27 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 			throw new RuntimeException(e);
 		}
 
-		CloudFoundryClient client = SpringCloudFoundryClient.builder()
-				.host(apiEndpoint.getHost())
-				.port(apiEndpoint.getPort())
-				.username(email)
-				.password(password)
-				.skipSslValidation(true)
-				.build();
+		CloudFoundryClient client = getCloudFoundryClient(email, password, apiEndpoint);
+		CloudFoundryOperations operations = getOperations(org, space, client);
 
-		CloudFoundryOperations operations = new CloudFoundryOperationsBuilder()
-				.cloudFoundryClient(client)
-				.target(org, space)
-				.build();
-
-		// TODO: Possibly utilize AppNameGenerator to generate appName.
 		return new CloudFoundryAppDeployer(props, operations, client, appName -> appName);
+	}
+
+	public static CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
+		return SpringCloudFoundryClient.builder()
+					.host(apiEndpoint.getHost())
+					.port(apiEndpoint.getPort())
+					.username(email)
+					.password(password)
+					.skipSslValidation(true)
+					.build();
+	}
+
+	public static CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
+		return new CloudFoundryOperationsBuilder()
+					.cloudFoundryClient(client)
+					.target(org, space)
+					.build();
 	}
 
 	private static String getKey(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
