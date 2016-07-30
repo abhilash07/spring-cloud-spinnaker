@@ -32,37 +32,43 @@ class Settings extends React.Component {
 						<label className={labelLayout}>Default Org</label>
 						<input className={inputLayout} type="text"
 							   placeholder="Primary organization Spinnaker will deploy to"
-							   name="providers.cf.defaultOrg" onChange={this.handleChange} />
+							   name="providers.cf.defaultOrg" onChange={this.handleChange}
+							   value={this.props.settings['providers.cf.defaultOrg']}/>
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Default Space</label>
 						<input className={inputLayout} type="text"
 							   placeholder="Primary space Spinnaker will deploy to"
-							   name="providers.cf.defaultSpace" onChange={this.handleChange} />
+							   name="providers.cf.defaultSpace" onChange={this.handleChange}
+							   value={this.props.settings['providers.cf.defaultSpace']}/>
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Primary Account API</label>
 						<input className={inputLayout} type="text"
 							   placeholder="API for Spinnaker to make deployments"
-							   name="providers.cf.primaryCredentials.api" onChange={this.handleChange} />
+							   name="providers.cf.primaryCredentials.api" onChange={this.handleChange}
+							   value={this.props.settings['providers.cf.primaryCredentials.api']} />
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Primary Account Console</label>
 						<input className={inputLayout} type="text"
 							   placeholder="App Manager URL for default space"
-							   name="providers.cf.primaryCredentials.console" onChange={this.handleChange} />
+							   name="providers.cf.primaryCredentials.console" onChange={this.handleChange}
+						/>
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Account Name</label>
 						<input className={inputLayout} type="text"
 							   placeholder="User id for making deployments"
-							   name="cf.account.name" onChange={this.handleChange} />
+							   name="cf.account.name" onChange={this.handleChange}
+							   value={this.props.settings['cf.account.name']}/>
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Account Password</label>
 						<input className={inputLayout} type="password"
 							   placeholder="Password for making deployments"
-							   name="cf.account.password" onChange={this.handleChange} />
+							   name="cf.account.password" onChange={this.handleChange}
+							   value={this.props.settings['cf.account.password']}/>
 					</li>
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Repository Name/Access Code</label>
@@ -98,7 +104,8 @@ class Settings extends React.Component {
 						<label className={labelLayout}>All Account Names (separated by commas)</label>
 						<input className={inputLayout} type="text"
 							   placeholder="Listing of all accounts (e.g. prod,staging,dev)"
-							   name="deck.primaryAccounts" onChange={this.handleChange} />
+							   name="deck.primaryAccounts" onChange={this.handleChange}
+							   value={this.props.settings['deck.primaryAccounts']}/>
 					</li>
 				</ul>
 			</div>

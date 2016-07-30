@@ -39,6 +39,25 @@ class Application extends React.Component {
 	updateSetting(key, value) {
 		let newState = {}
 		newState[key] = value
+		if (key === this.state.api) {
+			newState['providers.cf.primaryCredentials.api'] = value
+		}
+		if (key === this.state.org) {
+			newState['providers.cf.defaultOrg'] = value
+		}
+		if (key === this.state.space) {
+			newState['providers.cf.defaultSpace'] = value
+		}
+		if (key === this.state.email) {
+			newState[this.state.accountName] = value
+		}
+		if (key === this.state.password) {
+			newState[this.state.accountPassword] = value
+		}
+		if (key === this.state.primaryAccount) {
+			newState[this.state.primaryAccounts] = value
+		}
+
 		this.setState(newState)
 	}
 
@@ -81,9 +100,12 @@ class Application extends React.Component {
 				<section className="box box--tiny content__container">
 					<div id="settings" className={this.settingsStatus('settings')}>
 						<h1>Installation Settings</h1>
-						<SpinnakerSettings updateSetting={this.updateSetting} refresh={this.refresh} />
+						<SpinnakerSettings updateSetting={this.updateSetting}
+										   refresh={this.refresh}
+										   settings={this.state}/>
 						<h1>Spinnaker Settings</h1>
-						<Settings updateSetting={this.updateSetting} />
+						<Settings updateSetting={this.updateSetting}
+								  settings={this.state} />
 					</div>
 
 					<div id="status" className={this.settingsStatus('status')}>

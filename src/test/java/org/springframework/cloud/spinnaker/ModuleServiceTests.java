@@ -31,18 +31,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
-import org.junit.Ignore;
+import org.cloudfoundry.operations.applications.Applications;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
@@ -53,8 +52,6 @@ import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -133,7 +130,11 @@ public class ModuleServiceTests {
 
 		// given
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
+		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
 		appDeployerFactory.setStub(appDeployer);
+		appDeployerFactory.setStubOperations(operations);
+
+		Applications applications = mock(Applications.class);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver");
 		given(appDeployer.status("clouddriver")).willReturn(
@@ -167,6 +168,9 @@ public class ModuleServiceTests {
 		));
 		then(appDeployer).should().status("clouddriver");
 		verifyNoMoreInteractions(appDeployer);
+
+		then(operations).should().applications();
+		verifyNoMoreInteractions(operations);
 	}
 
 	@Test

@@ -41,27 +41,27 @@ spinnaker:
 #    spring.config.location: https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker-local.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}-local.yml
     redis.configuration.secure: true
     redis.connection: ${cloud.services.redis.connection.scheme}://username:${cloud.services.redis.connection.password}@${cloud.services.redis.connection.host}:${cloud.services.redis.connection.port}
-    services.default.protocol: http
+    services.default.protocol: https
     services.clouddriver.host: clouddriver
     services.clouddriver.port: 80
-    services.clouddriver.baseUrl: ${services.default.protocol}://${services.clouddriver.host}${namespace}.${deck.domain}:${services.clouddriver.port}
+    services.clouddriver.baseUrl: ${services.default.protocol}://${services.clouddriver.host}${namespace}.${deck.domain}
     services.echo.enabled: true
     services.echo.host: echo
     services.echo.port: 80
-    services.echo.baseUrl: ${services.default.protocol}://${services.echo.host}${namespace}.${deck.domain}:${services.echo.port}
+    services.echo.baseUrl: ${services.default.protocol}://${services.echo.host}${namespace}.${deck.domain}
     services.front50.host: front50
     services.front50.port: 80
-    services.front50.baseUrl: ${services.default.protocol}://${services.front50.host}${namespace}.${deck.domain}:${services.front50.port}
+    services.front50.baseUrl: ${services.default.protocol}://${services.front50.host}${namespace}.${deck.domain}
     services.gate.host: gate
     services.gate.port: 80
-    services.gate.baseUrl: ${services.default.protocol}://${services.gate.host}${namespace}.${deck.domain}:${services.gate.port}
+    services.gate.baseUrl: ${services.default.protocol}://${services.gate.host}${namespace}.${deck.domain}
     services.igor.enabled: true
     services.igor.host: igor
     services.igor.port: 80
-    services.igor.baseUrl: ${services.default.protocol}://${services.igor.host}${namespace}.${deck.domain}:${services.igor.port}
+    services.igor.baseUrl: ${services.default.protocol}://${services.igor.host}${namespace}.${deck.domain}
     services.orca.host: orca
     services.orca.port: 80
-    services.orca.baseUrl: ${services.default.protocol}://${services.orca.host}${namespace}.${deck.domain}:${services.orca.port}
+    services.orca.baseUrl: ${services.default.protocol}://${services.orca.host}${namespace}.${deck.domain}
     services.default.primaryAccountName: ${deck.primaryAccount}
     spinnaker.baseUrl: ${services.default.protocol}://deck${namespace}.${deck.domain}
     cassandra.enabled: ${spinnaker.cassandra.enabled}
