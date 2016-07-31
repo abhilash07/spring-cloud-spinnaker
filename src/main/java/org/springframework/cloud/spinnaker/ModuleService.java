@@ -110,7 +110,7 @@ public class ModuleService {
 
 		return spinnakerConfiguration.getModules().stream()
 			.map(ModuleDetails::getName)
-			.map(name -> appDeployerFactory.getObject(api, org, space, email, password, namespace).status(name + namespace));
+			.map(name -> appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).status(name + namespace));
 	}
 
 	/**
@@ -123,7 +123,7 @@ public class ModuleService {
 
 		return lookupModule(name)
 			.map(details -> details.getName())
-			.map(moduleName -> appDeployerFactory.getObject(api, org, space, email, password, namespace).status(moduleName + namespace))
+			.map(moduleName -> appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).status(moduleName + namespace))
 			.orElseThrow(handleNonExistentModule(name));
 	}
 
@@ -141,8 +141,8 @@ public class ModuleService {
 		final org.springframework.core.io.Resource artifactToDeploy = findArtifact(details, ctx, data);
 		final Map<String, String> properties = getProperties(spinnakerConfiguration, details, data);
 
-		CloudFoundryClient client = DefaultAppDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
-		CloudFoundryOperations operations = DefaultAppDeployerFactory.getOperations(org, space, client);
+		CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
+		CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
 		CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
 
 		log.debug("Uploading " + artifactToDeploy + "...");
@@ -183,7 +183,7 @@ public class ModuleService {
 	 * @param name
 	 */
 	public void undeploy(String name, String api, String org, String space, String email, String password, String namespace) {
-		appDeployerFactory.getObject(api, org, space, email, password, namespace).undeploy(name);
+		appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).undeploy(name);
 
 		counterService.increment(String.format(METRICS_UNDEPLOYED, name));
 	}
@@ -248,8 +248,8 @@ public class ModuleService {
 		return Optional.ofNullable(details.getProperties().get("buildpack"))
 			// TODO: Remove this step when Spring Cloud Deployer allows overriding the buildpack
 			.map(buildpack -> mutateBuildpack(new CloudFoundryDeployerProperties(), buildpack))
-			.map(props -> appDeployerFactory.getObject(props, api, org, space, email, password, namespace))
-			.orElse(appDeployerFactory.getObject(api, org, space, email, password, namespace));
+			.map(props -> appDeployerFactory.getAppDeployer(props, api, org, space, email, password, namespace))
+			.orElse(appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace));
 	}
 
 	/**

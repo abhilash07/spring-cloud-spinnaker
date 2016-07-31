@@ -15,6 +15,11 @@
  */
 package org.springframework.cloud.spinnaker;
 
+import java.net.URL;
+
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.operations.CloudFoundryOperations;
+
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
 
@@ -24,19 +29,27 @@ import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerP
 public class TestAppDeployerFactory implements CloudFoundryAppDeployerFactory {
 
 	private CloudFoundryAppDeployer stub;
-
-	public TestAppDeployerFactory() {
-		this.stub = stub;
-	}
+	private CloudFoundryClient stubClient;
+	private CloudFoundryOperations stubOperations;
 
 	@Override
-	public CloudFoundryAppDeployer getObject(String api, String org, String space, String email, String password, String namespace) {
+	public CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace) {
 		return this.stub;
 	}
 
 	@Override
-	public CloudFoundryAppDeployer getObject(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
+	public CloudFoundryAppDeployer getAppDeployer(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
 		return this.stub;
+	}
+
+	@Override
+	public CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
+		return this.stubClient;
+	}
+
+	@Override
+	public CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
+		return this.stubOperations;
 	}
 
 	public CloudFoundryAppDeployer getStub() {
@@ -47,4 +60,19 @@ public class TestAppDeployerFactory implements CloudFoundryAppDeployerFactory {
 		this.stub = stub;
 	}
 
+	public CloudFoundryClient getStubClient() {
+		return stubClient;
+	}
+
+	public void setStubClient(CloudFoundryClient stubClient) {
+		this.stubClient = stubClient;
+	}
+
+	public CloudFoundryOperations getStubOperations() {
+		return stubOperations;
+	}
+
+	public void setStubOperations(CloudFoundryOperations stubOperations) {
+		this.stubOperations = stubOperations;
+	}
 }

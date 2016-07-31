@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
@@ -62,8 +63,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Greg Turnquist
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ModuleServiceTests.TestConfig.class)
-@Ignore
+@SpringBootTest(classes = ModuleServiceTests.TestConfig.class)
 public class ModuleServiceTests {
 
 	@Autowired
@@ -136,6 +136,20 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver");
+		given(appDeployer.status("clouddriver")).willReturn(
+				AppStatus
+						.of("clouddriver")
+						.with(
+								new CloudFoundryAppInstanceStatus(
+										ApplicationDetail.builder()
+												.name("clouddriver")
+												.id("abcdef")
+												.build(),
+										ApplicationDetail.InstanceDetail.builder()
+												.state("RUNNING")
+												.build(),
+										0))
+						.build());
 
 		Resource artifactToUpload = mock(Resource.class);
 
@@ -151,6 +165,7 @@ public class ModuleServiceTests {
 				artifactToUpload,
 				any()
 		));
+		then(appDeployer).should().status("clouddriver");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -162,6 +177,20 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver");
+		given(appDeployer.status("clouddriver")).willReturn(
+				AppStatus
+						.of("clouddriver")
+						.with(
+								new CloudFoundryAppInstanceStatus(
+										ApplicationDetail.builder()
+												.name("clouddriver")
+												.id("abcdef")
+												.build(),
+										ApplicationDetail.InstanceDetail.builder()
+												.state("RUNNING")
+												.build(),
+										0))
+						.build());
 
 		Resource artifactToUpload = mock(Resource.class);
 
@@ -178,6 +207,7 @@ public class ModuleServiceTests {
 				artifactToUpload,
 				any()
 		));
+		then(appDeployer).should().status("clouddriver");
 		verifyNoMoreInteractions(appDeployer);
 	}
 

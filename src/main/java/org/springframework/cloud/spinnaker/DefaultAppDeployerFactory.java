@@ -35,18 +35,27 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 
 	private final Map<String, CloudFoundryAppDeployer> cachedDeployers = new HashMap<>();
 
-	public DefaultAppDeployerFactory() {
+	@Override
+	public CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace) {
+		return getAppDeployer(new CloudFoundryDeployerProperties(), api, org, space, email, password, namespace);
 	}
 
-	public CloudFoundryAppDeployer getObject(String api, String org, String space, String email, String password, String namespace) {
-		return getObject(new CloudFoundryDeployerProperties(), api, org, space, email, password, namespace);
-	}
-
-	public CloudFoundryAppDeployer getObject(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
+	@Override
+	public CloudFoundryAppDeployer getAppDeployer(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
 
 		return this.cachedDeployers.computeIfAbsent(
 				getKey(props, api, org, space, email, password, namespace),
 				s -> doCreate(props, api, org, space, email, password));
+	}
+
+	@Override
+	public CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
+		return doCreateCloudFoundryClient(email, password, apiEndpoint);
+	}
+
+	@Override
+	public CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
+		return doCreateOperations(org, space, client);
 	}
 
 	private static CloudFoundryAppDeployer doCreate(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password) {
@@ -58,13 +67,13 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 			throw new RuntimeException(e);
 		}
 
-		CloudFoundryClient client = getCloudFoundryClient(email, password, apiEndpoint);
-		CloudFoundryOperations operations = getOperations(org, space, client);
+		CloudFoundryClient client = doCreateCloudFoundryClient(email, password, apiEndpoint);
+		CloudFoundryOperations operations = doCreateOperations(org, space, client);
 
 		return new CloudFoundryAppDeployer(props, operations, client, appName -> appName);
 	}
 
-	public static CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
+	private static CloudFoundryClient doCreateCloudFoundryClient(String email, String password, URL apiEndpoint) {
 		return SpringCloudFoundryClient.builder()
 					.host(apiEndpoint.getHost())
 					.port(apiEndpoint.getPort())
@@ -74,7 +83,7 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 					.build();
 	}
 
-	public static CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
+	private static CloudFoundryOperations doCreateOperations(String org, String space, CloudFoundryClient client) {
 		return new CloudFoundryOperationsBuilder()
 					.cloudFoundryClient(client)
 					.target(org, space)

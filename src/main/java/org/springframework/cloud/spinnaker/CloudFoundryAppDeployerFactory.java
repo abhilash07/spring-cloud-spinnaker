@@ -15,6 +15,11 @@
  */
 package org.springframework.cloud.spinnaker;
 
+import java.net.URL;
+
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.operations.CloudFoundryOperations;
+
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
 
@@ -23,8 +28,12 @@ import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerP
  */
 public interface CloudFoundryAppDeployerFactory {
 
-	CloudFoundryAppDeployer getObject(String api, String org, String space, String email, String password, String namespace);
+	CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace);
 
-	CloudFoundryAppDeployer getObject(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace);
+	CloudFoundryAppDeployer getAppDeployer(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace);
+
+	CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint);
+
+	CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client);
 
 }
