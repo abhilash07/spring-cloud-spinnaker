@@ -171,6 +171,7 @@ public class ModuleServiceTests {
 
 		then(operations).should().applications();
 		verifyNoMoreInteractions(operations);
+
 	}
 
 	@Test

@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
@@ -49,7 +48,6 @@ public class ModuleController {
 
 	private final ModuleService moduleService;
 
-	@Autowired
 	public ModuleController(ModuleService moduleService) {
 		this.moduleService = moduleService;
 	}
