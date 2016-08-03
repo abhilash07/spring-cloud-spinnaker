@@ -64,7 +64,9 @@ public class ModuleController {
 			moduleService.getStatuses(api, org, space, email, password, namespace)
 				.map(appStatus -> new Resource<>(
 					appStatus,
-					linkTo(methodOn(ModuleController.class).status(appStatus.getDeploymentId(), api, org, space, email, password, namespace)).withSelfRel()))
+					linkTo(methodOn(ModuleController.class).status(appStatus.getDeploymentId(), api, org, space, email, password, namespace)).withSelfRel(),
+					linkTo(methodOn(ModuleController.class).start(appStatus.getDeploymentId(), api, org, space, email, password, namespace)).withRel("start"),
+					linkTo(methodOn(ModuleController.class).stop(appStatus.getDeploymentId(), api, org, space, email, password, namespace)).withRel("stop")))
 				.collect(Collectors.toList()),
 				linkTo(methodOn(ModuleController.class).statuses(api, org, space, email, password, namespace)).withSelfRel()
 		));
@@ -83,7 +85,9 @@ public class ModuleController {
 			moduleService.getStatus(module, api, org, space, email, password, namespace),
 			linkTo(methodOn(ModuleController.class).status(module, api, org, space, email, password, namespace)).withSelfRel(),
 			linkTo(methodOn(ModuleController.class).statuses(api, org, space, email, password, namespace)).withRel("all"),
-			linkTo(methodOn(ApiController.class).root(api, org, space, email, password, namespace)).withRel("root")
+			linkTo(methodOn(ApiController.class).root(api, org, space, email, password, namespace)).withRel("root"),
+			linkTo(methodOn(ModuleController.class).start(module, api, org, space, email, password, namespace)).withRel("start"),
+			linkTo(methodOn(ModuleController.class).stop(module, api, org, space, email, password, namespace)).withRel("stop")
 		));
 	}
 
@@ -100,6 +104,32 @@ public class ModuleController {
 		moduleService.deploy(module, data, api, org, space, email, password, namespace);
 
 		return ResponseEntity.created(linkTo(methodOn(ModuleController.class).status(module, api, org, space, email, password, namespace)).toUri()).build();
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = BASE_PATH + "/modules/{module}/start")
+	public ResponseEntity<?> start(@PathVariable String module,
+								   @RequestParam("api") String api,
+								   @RequestParam("org") String org,
+								   @RequestParam("space") String space,
+								   @RequestParam("email") String email,
+								   @RequestParam("password") String password,
+								   @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+
+		moduleService.start(module, api, org, space, email, password, namespace);
+		return ResponseEntity.noContent().build();
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = BASE_PATH + "/modules/{module}/stop")
+	public ResponseEntity<?> stop(@PathVariable String module,
+								   @RequestParam("api") String api,
+								   @RequestParam("org") String org,
+								   @RequestParam("space") String space,
+								   @RequestParam("email") String email,
+								   @RequestParam("password") String password,
+								   @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+
+		moduleService.stop(module, api, org, space, email, password, namespace);
+		return ResponseEntity.noContent().build();
 	}
 
 	@RequestMapping(method = RequestMethod.DELETE, value = BASE_PATH + "/modules/{module}")

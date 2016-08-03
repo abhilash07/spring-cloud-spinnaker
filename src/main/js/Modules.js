@@ -19,10 +19,14 @@ class Modules extends React.Component {
 		this.refresh = this.refresh.bind(this)
 		this.deploy = this.deploy.bind(this)
 		this.undeploy = this.undeploy.bind(this)
+		this.start = this.start.bind(this)
+		this.stop = this.stop.bind(this)
 		this.getNamespace = this.getNamespace.bind(this)
 		this.handleRefreshAll = this.handleRefreshAll.bind(this)
 		this.handleDeployAll = this.handleDeployAll.bind(this)
 		this.handleUndeployAll = this.handleUndeployAll.bind(this)
+		this.handleStartAll = this.handleStartAll.bind(this)
+		this.handleStopAll = this.handleStopAll.bind(this)
 	}
 
 	findModules() {
@@ -105,6 +109,22 @@ class Modules extends React.Component {
 		})
 	}
 
+	start(moduleDetails) {
+		client({method: 'POST', path: moduleDetails._links.start.href}).done(success => {
+			this.refresh(moduleDetails)
+		}, failure => {
+			alert('FAILURE: ' + failure.entity.message)
+		})
+	}
+
+	stop(moduleDetails) {
+		client({method: 'POST', path: moduleDetails._links.stop.href}).done(success => {
+			this.refresh(moduleDetails)
+		}, failure => {
+			alert('FAILURE: ' + failure.entity.message)
+		})
+	}
+
 	getNamespace() {
 		if (this.props.settings['all.namespace'] !== undefined && this.props.settings['all.namespace'] !== '') {
 			return '-' + this.props.settings['all.namespace']
@@ -134,13 +154,29 @@ class Modules extends React.Component {
 		})
 	}
 
+	handleStartAll(e) {
+		e.preventDefault()
+		Object.keys(this.state.modules).map(key => {
+			this.start(this.state.modules[key])
+		})
+	}
+
+	handleStopAll(e) {
+		e.preventDefault()
+		Object.keys(this.state.modules).map(key => {
+			this.stop(this.state.modules[key])
+		})
+	}
+
 	render() {
 		let modules = Object.keys(this.state.modules).map(name =>
 			<Module key={name}
 					details={this.state.modules[name]}
 					refresh={this.refresh}
 					deploy={this.deploy}
-					undeploy={this.undeploy} />)
+					undeploy={this.undeploy}
+					start={this.start}
+					stop={this.stop}/>)
 
 		return (
 			<table className="table table--cosy table--rows">
@@ -148,7 +184,7 @@ class Modules extends React.Component {
 				<tr>
 					<td></td><td></td>
 					<td><button onClick={this.findModules}>Load</button></td>
-					<td></td><td></td>
+					<td></td><td></td><td></td><td></td>
 				</tr>
 				{modules}
 				<tr>
@@ -156,6 +192,8 @@ class Modules extends React.Component {
 					<td><button onClick={this.handleRefreshAll}>Refresh All</button></td>
 					<td><button onClick={this.handleDeployAll}>Deploy All</button></td>
 					<td><button onClick={this.handleUndeployAll}>Undeploy All</button></td>
+					<td><button onClick={this.handleStartAll}>Start All</button></td>
+					<td><button onClick={this.handleStopAll}>Stop All</button></td>
 				</tr>
 				</tbody>
 			</table>

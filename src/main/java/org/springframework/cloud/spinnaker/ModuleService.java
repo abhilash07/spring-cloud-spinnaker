@@ -20,6 +20,7 @@ import static org.cloudfoundry.util.DelayUtils.exponentialBackOff;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -45,6 +46,8 @@ import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.GetApplicationRequest;
 import org.cloudfoundry.operations.applications.RestartApplicationRequest;
+import org.cloudfoundry.operations.applications.StartApplicationRequest;
+import org.cloudfoundry.operations.applications.StopApplicationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -186,6 +189,71 @@ public class ModuleService {
 		appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).undeploy(name);
 
 		counterService.increment(String.format(METRICS_UNDEPLOYED, name));
+	}
+
+	/**
+	 * Start a given module on the CF
+	 *
+	 * @param name
+	 */
+	public void start(String name, String api, String org, String space, String email, String password, String namespace) {
+
+		try {
+			ModuleDetails details = getModuleDetails(name);
+
+			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
+			CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+
+			operations.applications()
+				.start(StartApplicationRequest.builder()
+					.name(name)
+					.build())
+				.subscribe();
+
+			Mono.defer(() -> Mono.just(appDeployer.status(name)))
+				.where(appStatus ->
+					appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
+				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+				.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
+				.doOnError(e -> log.error(String.format("Unable to start %s", name)))
+				.subscribe();
+
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Start a given module on the CF
+	 *
+	 * @param name
+	 */
+	public void stop(String name, String api, String org, String space, String email, String password, String namespace) {
+
+		try {
+			ModuleDetails details = getModuleDetails(name);
+
+			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
+			CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+
+			operations.applications()
+				.stop(StopApplicationRequest.builder()
+					.name(name)
+					.build())
+				.subscribe();
+
+			Mono.defer(() -> Mono.just(appDeployer.status(name)))
+				.where(appStatus -> appStatus.getState() == DeploymentState.unknown)
+				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+				.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
+				.doOnError(e -> log.error(String.format("Unable to stop %s", name)))
+				.subscribe();
+
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -447,4 +515,5 @@ public class ModuleService {
 			return totalState;
 		};
 	}
+
 }
