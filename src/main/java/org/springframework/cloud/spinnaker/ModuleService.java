@@ -44,6 +44,7 @@ import java.util.zip.ZipOutputStream;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.cloudfoundry.operations.applications.DeleteApplicationRequest;
 import org.cloudfoundry.operations.applications.GetApplicationRequest;
 import org.cloudfoundry.operations.applications.RestartApplicationRequest;
 import org.cloudfoundry.operations.applications.StartApplicationRequest;
@@ -171,11 +172,14 @@ public class ModuleService {
 					.build()))
 				.doOnSuccess(v -> log.debug(String.format("Setting individual env variables for %s to %s", details.getName() + namespace, properties)))
 				.doOnError(e -> log.error(String.format("Unable to set individual env variables for app %s", details.getName() + namespace)))
-			.then(response -> operations.applications()
-				.restart(RestartApplicationRequest.builder()
-					.name(details.getName() + namespace)
-					.build()))
-			.subscribe();
+			.then(response -> {
+				log.debug("Time to restart the app!");
+				return operations.applications()
+						.restart(RestartApplicationRequest.builder()
+								.name(details.getName() + namespace)
+								.build());
+			})
+			.get(Duration.ofMinutes(10));
 
 		counterService.increment(String.format(METRICS_DEPLOYED, module));
 	}
@@ -186,9 +190,25 @@ public class ModuleService {
 	 * @param name
 	 */
 	public void undeploy(String name, String api, String org, String space, String email, String password, String namespace) {
-		appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).undeploy(name);
 
-		counterService.increment(String.format(METRICS_UNDEPLOYED, name));
+		try {
+			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
+
+			// TODO: Fix Spring Cloud Deployer CF such that undeploy uses get(), not subscribe()
+			//appDeployer.undeploy(name);
+
+			operations.applications()
+				.delete(DeleteApplicationRequest.builder()
+					.name(name)
+					.deleteRoutes(true)
+					.build())
+				.get(Duration.ofMinutes(5));
+
+			counterService.increment(String.format(METRICS_UNDEPLOYED, name));
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -209,15 +229,13 @@ public class ModuleService {
 				.start(StartApplicationRequest.builder()
 					.name(name)
 					.build())
-				.subscribe();
-
-			Mono.defer(() -> Mono.just(appDeployer.status(name)))
-				.where(appStatus ->
-					appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
-				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-				.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
-				.doOnError(e -> log.error(String.format("Unable to start %s", name)))
-				.subscribe();
+				.after(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+					.where(appStatus ->
+						appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
+					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+					.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
+					.doOnError(e -> log.error(String.format("Unable to start %s", name))))
+				.get(Duration.ofMinutes(10));
 
 		} catch (MalformedURLException e) {
 			throw new RuntimeException(e);
@@ -242,14 +260,12 @@ public class ModuleService {
 				.stop(StopApplicationRequest.builder()
 					.name(name)
 					.build())
-				.subscribe();
-
-			Mono.defer(() -> Mono.just(appDeployer.status(name)))
-				.where(appStatus -> appStatus.getState() == DeploymentState.unknown)
-				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-				.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
-				.doOnError(e -> log.error(String.format("Unable to stop %s", name)))
-				.subscribe();
+				.after(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+					.where(appStatus -> appStatus.getState() == DeploymentState.unknown)
+					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+					.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
+					.doOnError(e -> log.error(String.format("Unable to stop %s", name))))
+				.get(Duration.ofSeconds(30));
 
 		} catch (MalformedURLException e) {
 			throw new RuntimeException(e);

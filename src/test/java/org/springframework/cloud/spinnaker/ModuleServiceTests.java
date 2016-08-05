@@ -23,14 +23,19 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.applications.ApplicationsV2;
+import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.Applications;
@@ -38,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.CounterService;
@@ -131,10 +137,14 @@ public class ModuleServiceTests {
 		// given
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
 		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
+		CloudFoundryClient client = mock(CloudFoundryClient.class);
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubOperations(operations);
+		appDeployerFactory.setStubClient(client);
 
 		Applications applications = mock(Applications.class);
+
+		ApplicationsV2 applicationsV2 = mock(ApplicationsV2.class);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver");
 		given(appDeployer.status("clouddriver")).willReturn(
@@ -151,6 +161,11 @@ public class ModuleServiceTests {
 												.build(),
 										0))
 						.build());
+		given(operations.applications()).willReturn(applications);
+		given(applications.get(any())).willReturn(Mono.just(ApplicationDetail.builder().id("appid").build()));
+		given(client.applicationsV2()).willReturn(applicationsV2);
+		given(applicationsV2.update(any())).willReturn(Mono.just(UpdateApplicationResponse.builder().build()));
+		given(applications.restart(any())).willReturn(Mono.empty());
 
 		Resource artifactToUpload = mock(Resource.class);
 
@@ -169,7 +184,7 @@ public class ModuleServiceTests {
 		then(appDeployer).should().status("clouddriver");
 		verifyNoMoreInteractions(appDeployer);
 
-		then(operations).should().applications();
+		then(operations).should(times(2)).applications();
 		verifyNoMoreInteractions(operations);
 
 	}
@@ -179,16 +194,24 @@ public class ModuleServiceTests {
 
 		// given
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
+		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
+		CloudFoundryClient client = mock(CloudFoundryClient.class);
 		appDeployerFactory.setStub(appDeployer);
+		appDeployerFactory.setStubOperations(operations);
+		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("clouddriver");
-		given(appDeployer.status("clouddriver")).willReturn(
+		Applications applications = mock(Applications.class);
+
+		ApplicationsV2 applicationsV2 = mock(ApplicationsV2.class);
+
+		given(appDeployer.deploy(any())).willReturn("clouddriver-namespace");
+		given(appDeployer.status("clouddriver-namespace")).willReturn(
 				AppStatus
-						.of("clouddriver")
+						.of("clouddriver-namespace")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("clouddriver")
+												.name("clouddriver-namespace")
 												.id("abcdef")
 												.build(),
 										ApplicationDetail.InstanceDetail.builder()
@@ -196,38 +219,54 @@ public class ModuleServiceTests {
 												.build(),
 										0))
 						.build());
+		given(operations.applications()).willReturn(applications);
+		given(applications.get(any())).willReturn(Mono.just(ApplicationDetail.builder().id("appid").build()));
+		given(client.applicationsV2()).willReturn(applicationsV2);
+		given(applicationsV2.update(any())).willReturn(Mono.just(UpdateApplicationResponse.builder().build()));
+		given(applications.restart(any())).willReturn(Mono.empty());
 
 		Resource artifactToUpload = mock(Resource.class);
 
 		Map<String, String> data = new HashMap<>();
-		data.put("deck.domain", "white.springapps.io");
-		data.put("deck.primaryAccount", "prod");
+		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("clouddriver", data, "http://example.com", "org", "space", "user", "password", "");
+		moduleService.deploy("clouddriver", data, "http://example.com", "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("clouddriver", Collections.emptyMap()),
+				new AppDefinition("clouddriver-namespace", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("clouddriver");
+		then(appDeployer).should().status("clouddriver-namespace");
 		verifyNoMoreInteractions(appDeployer);
+
+		then(operations).should(times(2)).applications();
+		verifyNoMoreInteractions(operations);
 	}
 
 	@Test
 	public void shouldHandleUndeployingAnApp() {
 
 		// given
+		CloudFoundryClient client = mock(CloudFoundryClient.class);
+		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
 		appDeployerFactory.setStub(appDeployer);
+		appDeployerFactory.setStubClient(client);
+		appDeployerFactory.setStubOperations(operations);
+
+		Applications applications = mock(Applications.class);
+
+		given(operations.applications()).willReturn(applications);
+		given(applications.delete(any())).willReturn(Mono.empty());
 
 		// when
-		moduleService.undeploy("clouddriver", "api", "org", "space", "user", "password", "");
+		moduleService.undeploy("clouddriver", "http://example.com", "org", "space", "user", "password", "");
 
 		// then
-		then(appDeployer).should().undeploy("clouddriver");
+		then(applications).should().delete(any());
 		verifyNoMoreInteractions(appDeployer);
 	}
 
