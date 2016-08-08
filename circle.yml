@@ -1,0 +1,41 @@
+checkout:
+  post:
+    - git submodule init
+    - git submodule update --remote
+    - ./build_spinnaker.sh all
+
+general:
+  branches:
+    ignore:
+      - gh-pages # list of branches to ignore
+      - master # Built by jenkins.spring.io
+
+machine:
+  java:
+    version: oraclejdk8
+  environment:
+    _JAVA_OPTIONS: "-Xms1024m -Xmx2048m"
+
+dependencies:
+  pre:
+    -  |
+        sudo service zookeeper stop || echo "Service not running"
+        sudo service cassandra stop || echo "Service not running"
+        sudo service elasticsearch stop || echo "Service not running"
+        sudo service rabbitmq-server stop || echo "Service not running"
+        sudo service redis stop || echo "Service not running"
+        sudo service riak stop || echo "Service not running"
+        sudo service beanstalkd stop || echo "Service not running"
+        sudo service couchbase-server stop || echo "Service not running"
+        sudo service neo4j stop || echo "Service not running"
+        sudo service sphinxsearch stop || echo "Service not running"
+        sudo service postgresql stop || echo "Service not running"
+    - touch ~/.gradle/gradle.properties && echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
+
+test:
+  override:
+    - ./mvnw clean package -Dmaven.test.redirectTestOutputToFile=true
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find target -name "surefire-reports/*" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+    - find target -name "spring-cloud-spinnaker*.jar" -exec cp {} $CIRCLE_ARTIFACTS \;
