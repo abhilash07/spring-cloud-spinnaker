@@ -1,4 +1,4 @@
-image:https://travis-ci.org/spring-cloud/spring-cloud-spinnaker.svg?branch=master["Build Status", link="https://travis-ci.org/spring-cloud/spring-cloud-spinnaker"]
+image::https://circleci.com/gh/spring-cloud/spring-cloud-spinnaker.svg?style=svg["CircleCI", link="https://circleci.com/gh/spring-cloud/spring-cloud-spinnaker"]
 
 image:https://badge.waffle.io/spring-cloud/spring-cloud-spinnaker.png?label=ready&title=Ready["Stories in Ready", link="https://waffle.io/spring-cloud/spring-cloud-spinnaker"]
 
