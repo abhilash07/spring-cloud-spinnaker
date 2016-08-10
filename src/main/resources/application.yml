@@ -3,7 +3,7 @@ spinnaker:
     - name: clouddriver
       artifact: clouddriver-web
       properties:
-        spring.cloud.deployer.cloudfoundry.memory: 2048
+        spring.cloud.deployer.cloudfoundry.memory: 4096
     - name: deck
       artifact: deck-ui
       properties:
