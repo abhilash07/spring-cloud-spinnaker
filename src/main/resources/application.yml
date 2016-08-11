@@ -5,6 +5,7 @@ spinnaker:
       properties:
         spring.cloud.deployer.cloudfoundry.memory: 4096
         spring.cloud.deployer.cloudfoundry.disk: 2048
+        cf.asyncOperationTimeoutSecondsDefault: 1200 # 20 minutes
     - name: deck
       artifact: deck-ui
       properties:

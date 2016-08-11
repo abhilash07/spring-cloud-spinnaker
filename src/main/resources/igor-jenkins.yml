@@ -1,0 +1,7 @@
+jenkins:
+  masters:
+    -
+      name: ${services.jenkins.defaultMaster.name}
+      address: ${services.jenkins.defaultMaster.baseUrl}
+      username: ${services.jenkins.defaultMaster.username}
+      password: ${services.jenkins.defaultMaster.password}

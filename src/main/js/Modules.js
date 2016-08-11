@@ -95,6 +95,16 @@ class Modules extends React.Component {
 			}
 		}
 
+		if (moduleDetails.deploymentId.startsWith('igor')) {
+			if (this.props.settings[this.props.settings.jenkinsEnabled]) {
+				data[this.props.settings.jenkinsEnabled] = this.props.settings[this.props.settings.jenkinsEnabled]
+				data[this.props.settings.jenkinsName] = this.props.settings[this.props.settings.jenkinsName]
+				data[this.props.settings.jenkinsUrl] = this.props.settings[this.props.settings.jenkinsUrl]
+				data[this.props.settings.jenkinsUsername] = this.props.settings[this.props.settings.jenkinsUsername]
+				data[this.props.settings.jenkinsPassword] = this.props.settings[this.props.settings.jenkinsPassword]
+			}
+		}
+
 		data[this.props.settings.domain] = this.props.settings[this.props.settings.domain]
 		data['namespace'] = this.getNamespace()
 

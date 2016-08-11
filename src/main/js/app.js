@@ -28,7 +28,12 @@ class Application extends React.Component {
 			primaryAccounts: 'deck.primaryAccounts',
 			active: 'settings',
 			slackEnabled: 'slack.enabled',
-			slackToken: 'slack.token'
+			slackToken: 'slack.token',
+			jenkinsEnabled: 'jenkins.enabled',
+			jenkinsName: 'services.jenkins.defaultMaster.name',
+			jenkinsUrl: 'services.jenkins.defaultMaster.baseUrl',
+			jenkinsUsername: 'services.jenkins.defaultMaster.username',
+			jenkinsPassword: 'services.jenkins.defaultMaster.password'
 		}
 		this.updateSetting = this.updateSetting.bind(this)
 		this.handleSettings = this.handleSettings.bind(this)

@@ -406,6 +406,7 @@ public class ModuleService {
 			ZipOutputStream newModuleJarFile = new ZipOutputStream(newJarByteStream)) {
 
 			insertConfigFile(details, ctx, newModuleJarFile);
+			insertExtraConfigFiles(details, ctx, newModuleJarFile);
 
 			ZipEntry entry;
 			while ((entry = inputJarStream.getNextEntry()) != null) {
@@ -443,6 +444,25 @@ public class ModuleService {
 		StreamUtils.copy(configFiles[0].getInputStream(), newModuleJarFile);
 
 		newModuleJarFile.closeEntry();
+	}
+
+	private static void insertExtraConfigFiles(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
+
+		final String locationPattern = "classpath*:**/" + details.getName() + "-*.yml";
+		final Resource[] configFiles = ctx.getResources(locationPattern);
+		Stream.of(configFiles)
+			.forEach(configFile -> {
+				try {
+					log.info("Adding " + configFile.getFilename() + " + to " + details.getName());
+					JarEntry newEntry = new JarEntry(configFile.getFilename());
+					newEntry.setTime(System.currentTimeMillis());
+					newModuleJarFile.putNextEntry(newEntry);
+					StreamUtils.copy(configFile.getInputStream(), newModuleJarFile);
+					newModuleJarFile.closeEntry();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
 	}
 
 

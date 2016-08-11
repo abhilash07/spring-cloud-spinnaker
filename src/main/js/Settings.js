@@ -87,6 +87,49 @@ class Settings extends React.Component {
 							   name="cf.repo.password" onChange={this.handleChange} />
 					</li>
 					<li className={lineItemLayout}>
+						<label className={labelLayout}>Jenkins?</label>
+						<input className={inputLayout} type="checkbox"
+							   name="jenkins.enabled"
+							   checked={this.props.settings[this.props.settings.jenkinsEnabled]}
+							   onChange={this.handleChange} />
+					</li>
+					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
+						<li className={lineItemLayout}>
+							<label className={labelLayout}>Jenkins Name</label>
+							<input className={inputLayout} type="text"
+								   placeholder="Name of your instance of Jenkins"
+								   name={this.props.settings.jenkinsName} onChange={this.handleChange} />
+						</li>
+						: null
+					}
+					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
+						<li className={lineItemLayout}>
+							<label className={labelLayout}>Jenkins Base URL</label>
+							<input className={inputLayout} type="text"
+								   placeholder="URL of your Jenkins server"
+								   name={this.props.settings.jenkinsUrl} onChange={this.handleChange} />
+						</li>
+						: null
+					}
+					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
+						<li className={lineItemLayout}>
+							<label className={labelLayout}>Jenkins Username</label>
+							<input className={inputLayout} type="text"
+								   placeholder="Jenkins username"
+								   name={this.props.settings.jenkinsUsername} onChange={this.handleChange} />
+						</li>
+						: null
+					}
+					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
+						<li className={lineItemLayout}>
+							<label className={labelLayout}>Jenkins Password</label>
+							<input className={inputLayout} type="text"
+								   placeholder="Jenkins password"
+								   name={this.props.settings.jenkinsPassword} onChange={this.handleChange} />
+						</li>
+						: null
+					}
+					<li className={lineItemLayout}>
 						<label className={labelLayout}>Slack?</label>
 						<input className={inputLayout} type="checkbox"
 							   name={this.props.settings.slackEnabled}
@@ -97,7 +140,8 @@ class Settings extends React.Component {
 						<li className={lineItemLayout}>
 							<label className={labelLayout}>Slack Token (Use Bot not Webhook)</label>
 							<input className={inputLayout} type="text"
-								   name={this.props.settings.slackToken} onChange={this.handleChange} />
+								   placeholder="Bot token value (NOT Webhook token)"
+								   name={this.props.settings.slackToken} onChange={this.handleChange}/>
 						</li>
 						: null
 					}
