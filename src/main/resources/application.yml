@@ -37,8 +37,6 @@ spinnaker:
     JBP_CONFIG_DEBUG: '{enabled: true}' # TODO: Remove
     providers.cf.enabled: true
     providers.cf.primaryCredentials.name: ${deck.primaryAccount}
-    services.slack.enabled: true
-    services.slack.token: foo
 #    spring.config.location: https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker-local.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}-local.yml
     redis.configuration.secure: true
     redis.connection: ${cloud.services.redis.connection.scheme}://username:${cloud.services.redis.connection.password}@${cloud.services.redis.connection.host}:${cloud.services.redis.connection.port}

@@ -26,7 +26,9 @@ class Application extends React.Component {
 			domain: 'deck.domain',
 			primaryAccount: 'deck.primaryAccount',
 			primaryAccounts: 'deck.primaryAccounts',
-			active: 'settings'
+			active: 'settings',
+			slackEnabled: 'slack.enabled',
+			slackToken: 'slack.token'
 		}
 		this.updateSetting = this.updateSetting.bind(this)
 		this.handleSettings = this.handleSettings.bind(this)

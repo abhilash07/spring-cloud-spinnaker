@@ -11,8 +11,12 @@ class Settings extends React.Component {
 	}
 
 	handleChange(e) {
-		e.preventDefault()
-		this.props.updateSetting(e.target.name, e.target.value)
+		if (e.target.type === 'checkbox') {
+			this.props.updateSetting(e.target.name, e.target.checked)
+		} else {
+			e.preventDefault()
+			this.props.updateSetting(e.target.name, e.target.value)
+		}
 	}
 
 	render() {
@@ -82,6 +86,21 @@ class Settings extends React.Component {
 							   placeholder="Password/Secret code to pull down artifacts"
 							   name="cf.repo.password" onChange={this.handleChange} />
 					</li>
+					<li className={lineItemLayout}>
+						<label className={labelLayout}>Slack?</label>
+						<input className={inputLayout} type="checkbox"
+							   name={this.props.settings.slackEnabled}
+							   checked={this.props.settings[this.props.settings.slackEnabled]}
+							   onChange={this.handleChange} />
+					</li>
+					{ this.props.settings[this.props.settings.slackEnabled] ?
+						<li className={lineItemLayout}>
+							<label className={labelLayout}>Slack Token (Use Bot not Webhook)</label>
+							<input className={inputLayout} type="text"
+								   name={this.props.settings.slackToken} onChange={this.handleChange} />
+						</li>
+						: null
+					}
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Spring Config Location override</label>
 						<input className={inputLayout} type="text"

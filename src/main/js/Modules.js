@@ -88,6 +88,13 @@ class Modules extends React.Component {
 			data['providers.cf.defaultOrg'] = this.props.settings['providers.cf.defaultOrg']
 		}
 
+		if (moduleDetails.deploymentId.startsWith('echo')) {
+			if (this.props.settings[this.props.settings.slackEnabled]) {
+				data[this.props.settings.slackEnabled] = this.props.settings[this.props.settings.slackEnabled]
+				data[this.props.settings.slackToken] = this.props.settings[this.props.settings.slackToken]
+			}
+		}
+
 		data[this.props.settings.domain] = this.props.settings[this.props.settings.domain]
 		data['namespace'] = this.getNamespace()
 
