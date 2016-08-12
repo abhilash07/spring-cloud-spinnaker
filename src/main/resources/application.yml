@@ -21,6 +21,8 @@ spinnaker:
       artifact: gate-web
     - name: igor
       artifact: igor-web
+      properties:
+        spring.profiles.active: jenkins
     - name: orca
       artifact: orca-web
       properties:
