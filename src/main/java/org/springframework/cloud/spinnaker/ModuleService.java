@@ -65,7 +65,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.util.InMemoryResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -310,13 +309,21 @@ public class ModuleService {
 		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar";
 		final org.springframework.core.io.Resource[] resources = ctx.getResources(locationPattern);
 
-		Assert.state(resources.length == 1, "Number of resources MUST be 1");
+		return Stream.of(resources)
+				.findFirst()
+				.map(resource -> {
+					try {
+						log.info("Deploying " + resource.getFilename() + " found at " + resource.getURI().toString());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					log.info("Need to also chew on " + data);
 
-		log.info("Need to also chew on " + data);
-
-		return (details.getName().equals("deck")
-					? pluginSettingsJs(resources[0], data)
-					: addConfigFile(details, resources[0], ctx));
+					return (details.getName().equals("deck")
+							? pluginSettingsJs(resources[0], data)
+							: addConfigFile(details, resources[0], ctx));
+				})
+				.orElseThrow(() -> new RuntimeException("Unable to find artifact for " + details.getArtifact()));
 	}
 
 	/**
@@ -439,11 +446,17 @@ public class ModuleService {
 		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/config/" + details.getName() + ".yml";
 		final Resource[] configFiles = ctx.getResources(locationPattern);
 
-		Assert.state(configFiles.length == 1, "Number of resources MUST be 1");
-
-		StreamUtils.copy(configFiles[0].getInputStream(), newModuleJarFile);
-
-		newModuleJarFile.closeEntry();
+		Stream.of(configFiles)
+				.findFirst()
+				.ifPresent(resource -> {
+					try {
+						log.info("Deploying " + resource.getFilename() + " found at " + resource.getURI().toString());
+						StreamUtils.copy(resource.getInputStream(), newModuleJarFile);
+						newModuleJarFile.closeEntry();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
 	}
 
 	private static void insertExtraConfigFiles(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
@@ -453,14 +466,14 @@ public class ModuleService {
 		Stream.of(configFiles)
 			.forEach(configFile -> {
 				try {
-					log.info("Adding " + configFile.getFilename() + " + to " + details.getName());
+					log.info("Adding " + configFile.getFilename() + " to " + details.getName() + " found at " + configFile.getURI().toString());
 					JarEntry newEntry = new JarEntry(configFile.getFilename());
 					newEntry.setTime(System.currentTimeMillis());
 					newModuleJarFile.putNextEntry(newEntry);
 					StreamUtils.copy(configFile.getInputStream(), newModuleJarFile);
 					newModuleJarFile.closeEntry();
 				} catch (IOException e) {
-					throw new RuntimeException(e);
+					log.warn("Unable to process " + configFile.getFilename() + " => " + e.getMessage());
 				}
 			});
 	}
