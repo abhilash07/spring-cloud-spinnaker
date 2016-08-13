@@ -30,6 +30,7 @@ spinnaker:
         echo.enabled: ${services.echo.enabled}
         echo.baseUrl: ${services.echo.baseUrl}
         front50.baseUrl: ${services.front50.baseUrl}
+        igor.baseUrl: ${services.igor.baseUrl}
         tide.baseUrl: ${services.front50.baseUrl}
         oort.baseUrl: ${services.clouddriver.baseUrl}
         mort.baseUrl: ${services.clouddriver.baseUrl}
