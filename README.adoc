@@ -23,7 +23,7 @@ Before you can run this application, you have to build Spinnaker's modules.
 
 1. Clone this repository
 1. Run `git submodule init`
-1. Run `git submodule update`
+1. Run `git submodule update --remote`
 1. Run `./build_spinnaker.sh all`
 +
 WARNING: Do NOT interrupt `build_spinnaker.sh` in mid process. Due to the nature of Spinnaker's nebula gradle plugin, the
