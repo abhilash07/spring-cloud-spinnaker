@@ -25,5 +25,5 @@
 	ignore = dirty
 [submodule "deck"]
 	path = deck
-	url = https://github.com/gregturn/deck.git
+	url = https://github.com/spinnaker/deck.git
 	ignore = dirty

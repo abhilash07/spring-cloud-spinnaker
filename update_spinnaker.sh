@@ -6,17 +6,17 @@ update() {
 
 	echo "+++ Updating $1..."
 	pushd $1
-    git pull
+	git pull $2 $3
 	popd
 
 }
 
-update clouddriver
-update deck
-update echo
-update front50
-update gate
-update igor
-update orca
+update clouddriver origin cfsummit
+update deck origin master
+update echo origin master
+update front50 origin master
+update gate origin master
+update igor origin master
+update orca origin master
 
 
