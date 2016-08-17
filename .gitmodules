@@ -27,4 +27,3 @@
 	path = deck
 	url = https://github.com/gregturn/deck.git
 	ignore = dirty
-	branch = deployer
