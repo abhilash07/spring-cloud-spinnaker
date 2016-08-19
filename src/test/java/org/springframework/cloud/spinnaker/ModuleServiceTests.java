@@ -23,27 +23,23 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.applications.ApplicationsV2;
-import org.cloudfoundry.client.v2.applications.UpdateApplicationResponse;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.Applications;
+import org.cloudfoundry.operations.applications.InstanceDetail;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.CounterService;
@@ -55,12 +51,15 @@ import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeploy
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppInstanceStatus;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.spinnaker.filemanager.TempFileManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import reactor.core.publisher.Mono;
 
 /**
  * @author Greg Turnquist
@@ -92,8 +91,14 @@ public class ModuleServiceTests {
 							ApplicationDetail.builder()
 									.name("clouddriver")
 									.id("abcdef")
+									.stack("")
+									.diskQuota(1024)
+									.instances(1)
+									.memoryLimit(1024)
+									.requestedState("RUNNING")
+									.runningInstances(1)
 									.build(),
-							ApplicationDetail.InstanceDetail.builder()
+							InstanceDetail.builder()
 									.state("RUNNING")
 									.build(),
 							0))
@@ -136,15 +141,9 @@ public class ModuleServiceTests {
 
 		// given
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
-		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
 		CloudFoundryClient client = mock(CloudFoundryClient.class);
 		appDeployerFactory.setStub(appDeployer);
-		appDeployerFactory.setStubOperations(operations);
 		appDeployerFactory.setStubClient(client);
-
-		Applications applications = mock(Applications.class);
-
-		ApplicationsV2 applicationsV2 = mock(ApplicationsV2.class);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver");
 		given(appDeployer.status("clouddriver")).willReturn(
@@ -155,17 +154,18 @@ public class ModuleServiceTests {
 										ApplicationDetail.builder()
 												.name("clouddriver")
 												.id("abcdef")
+												.stack("")
+												.diskQuota(1024)
+												.instances(1)
+												.memoryLimit(1024)
+												.requestedState("RUNNING")
+												.runningInstances(1)
 												.build(),
-										ApplicationDetail.InstanceDetail.builder()
+										InstanceDetail.builder()
 												.state("RUNNING")
 												.build(),
 										0))
 						.build());
-		given(operations.applications()).willReturn(applications);
-		given(applications.get(any())).willReturn(Mono.just(ApplicationDetail.builder().id("appid").build()));
-		given(client.applicationsV2()).willReturn(applicationsV2);
-		given(applicationsV2.update(any())).willReturn(Mono.just(UpdateApplicationResponse.builder().build()));
-		given(applications.restart(any())).willReturn(Mono.empty());
 
 		Resource artifactToUpload = mock(Resource.class);
 
@@ -183,10 +183,6 @@ public class ModuleServiceTests {
 		));
 		then(appDeployer).should().status("clouddriver");
 		verifyNoMoreInteractions(appDeployer);
-
-		then(operations).should(times(2)).applications();
-		verifyNoMoreInteractions(operations);
-
 	}
 
 	@Test
@@ -194,15 +190,9 @@ public class ModuleServiceTests {
 
 		// given
 		CloudFoundryAppDeployer appDeployer = mock(CloudFoundryAppDeployer.class);
-		CloudFoundryOperations operations = mock(CloudFoundryOperations.class);
 		CloudFoundryClient client = mock(CloudFoundryClient.class);
 		appDeployerFactory.setStub(appDeployer);
-		appDeployerFactory.setStubOperations(operations);
 		appDeployerFactory.setStubClient(client);
-
-		Applications applications = mock(Applications.class);
-
-		ApplicationsV2 applicationsV2 = mock(ApplicationsV2.class);
 
 		given(appDeployer.deploy(any())).willReturn("clouddriver-namespace");
 		given(appDeployer.status("clouddriver-namespace")).willReturn(
@@ -213,17 +203,18 @@ public class ModuleServiceTests {
 										ApplicationDetail.builder()
 												.name("clouddriver-namespace")
 												.id("abcdef")
+												.stack("")
+												.diskQuota(1024)
+												.instances(1)
+												.memoryLimit(1024)
+												.requestedState("RUNNING")
+												.runningInstances(1)
 												.build(),
-										ApplicationDetail.InstanceDetail.builder()
+										InstanceDetail.builder()
 												.state("RUNNING")
 												.build(),
 										0))
 						.build());
-		given(operations.applications()).willReturn(applications);
-		given(applications.get(any())).willReturn(Mono.just(ApplicationDetail.builder().id("appid").build()));
-		given(client.applicationsV2()).willReturn(applicationsV2);
-		given(applicationsV2.update(any())).willReturn(Mono.just(UpdateApplicationResponse.builder().build()));
-		given(applications.restart(any())).willReturn(Mono.empty());
 
 		Resource artifactToUpload = mock(Resource.class);
 
@@ -241,9 +232,6 @@ public class ModuleServiceTests {
 		));
 		then(appDeployer).should().status("clouddriver-namespace");
 		verifyNoMoreInteractions(appDeployer);
-
-		then(operations).should(times(2)).applications();
-		verifyNoMoreInteractions(operations);
 	}
 
 	@Test
@@ -280,11 +268,17 @@ public class ModuleServiceTests {
 		}
 
 		@Bean
+		TempFileManager fileManager() {
+			return new TempFileManager();
+		}
+
+		@Bean
 		ModuleService moduleService(SpinnakerConfiguration spinnakerConfiguration,
 									CloudFoundryAppDeployerFactory appDeployerFactoryBean,
 									ApplicationContext ctx,
-									CounterService counterService) {
-			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, mockPatternResolver(ctx), counterService);
+									CounterService counterService,
+									TempFileManager fileManager) {
+			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, mockPatternResolver(ctx), counterService, fileManager);
 		}
 
 		@Bean

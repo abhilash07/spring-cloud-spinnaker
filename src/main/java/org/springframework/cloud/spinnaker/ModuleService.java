@@ -15,9 +15,6 @@
  */
 package org.springframework.cloud.spinnaker;
 
-import static java.util.stream.Stream.concat;
-import static org.cloudfoundry.util.DelayUtils.exponentialBackOff;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -25,7 +22,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,32 +38,31 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest;
-import org.cloudfoundry.operations.applications.GetApplicationRequest;
-import org.cloudfoundry.operations.applications.RestartApplicationRequest;
 import org.cloudfoundry.operations.applications.StartApplicationRequest;
 import org.cloudfoundry.operations.applications.StopApplicationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
-import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
+import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.cloud.spinnaker.filemanager.TempFileManager;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.security.util.InMemoryResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
+
+import static java.util.stream.Stream.concat;
+import static org.cloudfoundry.util.DelayUtils.exponentialBackOff;
 
 /**
  * A service to handle module level operations.
@@ -93,15 +89,19 @@ public class ModuleService {
 
 	private final CounterService counterService;
 
+	private final TempFileManager fileManager;
+
 	public ModuleService(SpinnakerConfiguration spinnakerConfiguration,
 						 CloudFoundryAppDeployerFactory appDeployerFactory,
 						 ResourcePatternResolver ctx,
-						 CounterService counterService) {
+						 CounterService counterService,
+						 TempFileManager fileManager) {
 
 		this.spinnakerConfiguration = spinnakerConfiguration;
 		this.appDeployerFactory = appDeployerFactory;
 		this.ctx = ctx;
 		this.counterService = counterService;
+		this.fileManager = fileManager;
 	}
 
 	/**
@@ -141,44 +141,33 @@ public class ModuleService {
 
 		ModuleDetails details = getModuleDetails(module);
 
-		final org.springframework.core.io.Resource artifactToDeploy = findArtifact(details, ctx, data);
+		final Resource artifactToDeploy = findArtifact(details, ctx, data);
 		final Map<String, String> properties = getProperties(spinnakerConfiguration, details, data);
 
-		CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
-		CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
-		CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+		final Map<String, String> deploymentProperties = new HashMap<>();
+		deploymentProperties.put(CloudFoundryDeploymentProperties.USE_SPRING_APPLICATION_JSON_KEY, "false");
+
+		Optional.ofNullable(details.getProperties().get("buildpack"))
+				.ifPresent(buildpack -> deploymentProperties.put(CloudFoundryDeploymentProperties.BUILDPACK_PROPERTY_KEY, buildpack));
+
+		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
 
 		log.debug("Uploading " + artifactToDeploy + "...");
 
 		String deploymentId = appDeployer.deploy(new AppDeploymentRequest(
-				new AppDefinition(details.getName() + namespace, Collections.emptyMap()),
+				new AppDefinition(details.getName() + namespace, properties),
 				artifactToDeploy,
-				properties));
+				deploymentProperties));
 
-		Mono.defer(() -> Mono.just(appDeployer.status(deploymentId)))
-			.where(appStatus ->
-				appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed || appStatus.getState() == DeploymentState.deploying)
-			.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-			.then(s -> operations.applications()
-				.get(GetApplicationRequest.builder()
-					.name(details.getName() + namespace)
-					.build())
-				.map(applicationDetail -> applicationDetail.getId()))
-			.then(applicationId -> client.applicationsV2()
-				.update(UpdateApplicationRequest.builder()
-					.applicationId(applicationId)
-					.environmentJsons(properties)
-					.build()))
-				.doOnSuccess(v -> log.debug(String.format("Setting individual env variables for %s to %s", details.getName() + namespace, properties)))
-				.doOnError(e -> log.error(String.format("Unable to set individual env variables for app %s", details.getName() + namespace)))
-			.then(response -> {
-				log.debug("Time to restart the app!");
-				return operations.applications()
-						.restart(RestartApplicationRequest.builder()
-								.name(details.getName() + namespace)
-								.build());
-			})
-			.get(Duration.ofMinutes(10));
+		try {
+			Mono.defer(() -> Mono.just(appDeployer.status(deploymentId)))
+				.filter(appStatus ->
+					appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.deploying)
+				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+				.block(Duration.ofMinutes(10));
+		} finally {
+			this.fileManager.delete(details);
+		}
 
 		counterService.increment(String.format(METRICS_DEPLOYED, module));
 	}
@@ -191,10 +180,9 @@ public class ModuleService {
 	public void undeploy(String name, String api, String org, String space, String email, String password, String namespace) {
 
 		try {
-			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
 
-			// TODO: Fix Spring Cloud Deployer CF such that undeploy uses get(), not subscribe()
+			// TODO: Migrate to new SPI with reactive interface.
 			//appDeployer.undeploy(name);
 
 			operations.applications()
@@ -202,7 +190,7 @@ public class ModuleService {
 					.name(name)
 					.deleteRoutes(true)
 					.build())
-				.get(Duration.ofMinutes(5));
+				.block(Duration.ofMinutes(5));
 
 			counterService.increment(String.format(METRICS_UNDEPLOYED, name));
 		} catch (MalformedURLException e) {
@@ -218,23 +206,21 @@ public class ModuleService {
 	public void start(String name, String api, String org, String space, String email, String password, String namespace) {
 
 		try {
-			ModuleDetails details = getModuleDetails(name);
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
 
-			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
-			CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+			CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
 
 			operations.applications()
 				.start(StartApplicationRequest.builder()
 					.name(name)
 					.build())
-				.after(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
-					.where(appStatus ->
+				.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+					.filter(appStatus ->
 						appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
 					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
 					.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
 					.doOnError(e -> log.error(String.format("Unable to start %s", name))))
-				.get(Duration.ofMinutes(10));
+				.block(Duration.ofMinutes(10));
 
 		} catch (MalformedURLException e) {
 			throw new RuntimeException(e);
@@ -249,22 +235,20 @@ public class ModuleService {
 	public void stop(String name, String api, String org, String space, String email, String password, String namespace) {
 
 		try {
-			ModuleDetails details = getModuleDetails(name);
+			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
 
-			CloudFoundryClient client = appDeployerFactory.getCloudFoundryClient(email, password, new URL(api));
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(org, space, client);
-			CloudFoundryAppDeployer appDeployer = getCloudFoundryAppDeployer(details, api, org, space, email, password, namespace);
+			CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
 
 			operations.applications()
 				.stop(StopApplicationRequest.builder()
 					.name(name)
 					.build())
-				.after(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
-					.where(appStatus -> appStatus.getState() == DeploymentState.unknown)
+				.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+					.filter(appStatus -> appStatus.getState() == DeploymentState.unknown)
 					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
 					.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
 					.doOnError(e -> log.error(String.format("Unable to stop %s", name))))
-				.get(Duration.ofSeconds(30));
+				.block(Duration.ofSeconds(30));
 
 		} catch (MalformedURLException e) {
 			throw new RuntimeException(e);
@@ -309,7 +293,7 @@ public class ModuleService {
 		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar";
 		final org.springframework.core.io.Resource[] resources = ctx.getResources(locationPattern);
 
-		return Stream.of(resources)
+		ByteArrayResource streamedArtifact = Stream.of(resources)
 				.findFirst()
 				.map(resource -> {
 					try {
@@ -324,54 +308,8 @@ public class ModuleService {
 							: addConfigFile(details, resources[0], ctx));
 				})
 				.orElseThrow(() -> new RuntimeException("Unable to find artifact for " + details.getArtifact()));
-	}
 
-	/**
-	 * Create an application deployer based on the module details
-	 *
-	 * TODO: Overhaul once buildpack is overrideable in the deployer.
-	 *
-	 * @param details
-	 * @return
-	 */
-	private CloudFoundryAppDeployer getCloudFoundryAppDeployer(ModuleDetails details, String api, String org, String space, String email, String password, String namespace) {
-
-		return Optional.ofNullable(details.getProperties().get("buildpack"))
-			// TODO: Remove this step when Spring Cloud Deployer allows overriding the buildpack
-			.map(buildpack -> mutateBuildpack(new CloudFoundryDeployerProperties(), buildpack))
-			.map(props -> appDeployerFactory.getAppDeployer(props, api, org, space, email, password, namespace))
-			.orElse(appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace));
-	}
-
-	/**
-	 * Clone the {@link CloudFoundryDeployerProperties} and alter the buildpack.
-	 *
-	 * TODO: Reevaluate after deployer updated to handle buildpack overrides.
-	 *
-	 * @param properties
-	 * @param buildpack
-	 * @return
-	 */
-	private static CloudFoundryDeployerProperties mutateBuildpack(CloudFoundryDeployerProperties properties, String buildpack) {
-
-		CloudFoundryDeployerProperties clonedProps = cloneDeployerProperties(properties);
-		clonedProps.setBuildpack(buildpack);
-		return clonedProps;
-	}
-
-	/**
-	 * Create a deep copy of {@link CloudFoundryDeployerProperties} to allow changes without affecting others.
-	 *
-	 * TODO: Reevaluate after deployer updated to handle buildpack overrides.
-	 *
-	 * @param properties
-	 * @return a deep copy of {@link CloudFoundryDeployerProperties}
-	 */
-	private static CloudFoundryDeployerProperties cloneDeployerProperties(CloudFoundryDeployerProperties properties) {
-
-		CloudFoundryDeployerProperties localProps = new CloudFoundryDeployerProperties();
-		BeanUtils.copyProperties(properties, localProps);
-		return localProps;
+		return this.fileManager.createTempFile(details, streamedArtifact);
 	}
 
 	/**
@@ -404,7 +342,7 @@ public class ModuleService {
 	 * @param resource
 	 * @return
 	 */
-	private static Resource addConfigFile(ModuleDetails details, Resource resource, ResourcePatternResolver ctx) {
+	private static ByteArrayResource addConfigFile(ModuleDetails details, Resource resource, ResourcePatternResolver ctx) {
 
 		final ByteArrayOutputStream newJarByteStream = new ByteArrayOutputStream();
 
@@ -435,7 +373,7 @@ public class ModuleService {
 //			throw new RuntimeException(e);
 //		}
 
-		return new InMemoryResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
+		return new ByteArrayResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
 	}
 
 	private static void insertConfigFile(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
@@ -479,7 +417,7 @@ public class ModuleService {
 	}
 
 
-	private org.springframework.core.io.Resource pluginSettingsJs(org.springframework.core.io.Resource originalDeckJarFile, Map<String, String> data) {
+	private ByteArrayResource pluginSettingsJs(Resource originalDeckJarFile, Map<String, String> data) {
 		try {
 			Manifest manifest = new Manifest();
 			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
@@ -513,7 +451,7 @@ public class ModuleService {
 //				file.toFile().deleteOnExit();
 //			}
 
-			return new InMemoryResource(jarByteStream.toByteArray(), "In memory JAR file for deck");
+			return new ByteArrayResource(jarByteStream.toByteArray(), "In memory JAR file for deck");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

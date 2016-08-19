@@ -22,11 +22,18 @@ import java.util.Map;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
-import org.cloudfoundry.operations.CloudFoundryOperationsBuilder;
-import org.cloudfoundry.spring.client.SpringCloudFoundryClient;
+import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
+import org.cloudfoundry.reactor.ConnectionContext;
+import org.cloudfoundry.reactor.DefaultConnectionContext;
+import org.cloudfoundry.reactor.TokenProvider;
+import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
+import org.cloudfoundry.reactor.doppler.ReactorDopplerClient;
+import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
+import org.cloudfoundry.reactor.uaa.ReactorUaaClient;
 
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
-import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
+import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryConnectionProperties;
+import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeploymentProperties;
 
 /**
  * @author Greg Turnquist
@@ -37,28 +44,28 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 
 	@Override
 	public CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace) {
-		return getAppDeployer(new CloudFoundryDeployerProperties(), api, org, space, email, password, namespace);
-	}
-
-	@Override
-	public CloudFoundryAppDeployer getAppDeployer(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
 
 		return this.cachedDeployers.computeIfAbsent(
-				getKey(props, api, org, space, email, password, namespace),
-				s -> doCreate(props, api, org, space, email, password));
+				getKey(api, org, space, email, password, namespace),
+				s -> doCreate(api, org, space, email, password));
 	}
 
 	@Override
 	public CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
-		return doCreateCloudFoundryClient(email, password, apiEndpoint);
+		ConnectionContext context = connectionContext(apiEndpoint);
+		TokenProvider tokenProvider = tokenProvider(email, password);
+		return doCreateCloudFoundryClient(context, tokenProvider);
 	}
 
 	@Override
-	public CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
-		return doCreateOperations(org, space, client);
+	public CloudFoundryOperations getOperations(String email, String password, URL apiEndpoint, String org, String space) {
+		CloudFoundryClient client = getCloudFoundryClient(email, password, apiEndpoint);
+		ConnectionContext context = connectionContext(apiEndpoint);
+		TokenProvider tokenProvider = tokenProvider(email, password);
+		return doCreateOperations(client, context, tokenProvider, org, space);
 	}
 
-	private static CloudFoundryAppDeployer doCreate(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password) {
+	private CloudFoundryAppDeployer doCreate(String api, String org, String space, String email, String password) {
 
 		final URL apiEndpoint;
 		try {
@@ -67,31 +74,64 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 			throw new RuntimeException(e);
 		}
 
-		CloudFoundryClient client = doCreateCloudFoundryClient(email, password, apiEndpoint);
-		CloudFoundryOperations operations = doCreateOperations(org, space, client);
+		CloudFoundryClient client = getCloudFoundryClient(email, password, apiEndpoint);
+		CloudFoundryOperations operations = getOperations(email, password, apiEndpoint, org, space);
 
-		return new CloudFoundryAppDeployer(props, operations, client, appName -> appName);
+		return new CloudFoundryAppDeployer(
+				new CloudFoundryConnectionProperties(),
+				new CloudFoundryDeploymentProperties(),
+				operations, client, appName -> appName);
 	}
 
-	private static CloudFoundryClient doCreateCloudFoundryClient(String email, String password, URL apiEndpoint) {
-		return SpringCloudFoundryClient.builder()
-					.host(apiEndpoint.getHost())
-					.port(apiEndpoint.getPort())
-					.username(email)
-					.password(password)
-					.skipSslValidation(true)
-					.build();
+	private ConnectionContext connectionContext(URL apiEndpoint) {
+		return DefaultConnectionContext.builder()
+				.apiHost(apiEndpoint.getHost())
+				.skipSslValidation(true)
+				.build();
 	}
 
-	private static CloudFoundryOperations doCreateOperations(String org, String space, CloudFoundryClient client) {
-		return new CloudFoundryOperationsBuilder()
-					.cloudFoundryClient(client)
-					.target(org, space)
-					.build();
+
+	private TokenProvider tokenProvider(String username, String password) {
+		return PasswordGrantTokenProvider.builder()
+				.username(username)
+				.password(password)
+				.build();
 	}
 
-	private static String getKey(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
-		return props.getBuildpack() + ":" + api + ":" + org + ":" + space + ":" + email + ":" + password + ":" + namespace;
+
+	private CloudFoundryClient doCreateCloudFoundryClient(ConnectionContext connectionContext, TokenProvider tokenProvider) {
+		return ReactorCloudFoundryClient.builder()
+				.connectionContext(connectionContext)
+				.tokenProvider(tokenProvider)
+				.build();
+	}
+
+	private CloudFoundryOperations doCreateOperations(CloudFoundryClient cloudFoundryClient,
+															 ConnectionContext connectionContext,
+															 TokenProvider tokenProvider,
+															 String org,
+															 String space) {
+		ReactorDopplerClient dopplerClient = ReactorDopplerClient.builder()
+				.connectionContext(connectionContext)
+				.tokenProvider(tokenProvider)
+				.build();
+
+		ReactorUaaClient uaaClient = ReactorUaaClient.builder()
+				.connectionContext(connectionContext)
+				.tokenProvider(tokenProvider)
+				.build();
+
+		return DefaultCloudFoundryOperations.builder()
+				.cloudFoundryClient(cloudFoundryClient)
+				.dopplerClient(dopplerClient)
+				.uaaClient(uaaClient)
+				.organization(org)
+				.space(space)
+				.build();
+	}
+
+	private String getKey( String api, String org, String space, String email, String password, String namespace) {
+		return api + ":" + org + ":" + space + ":" + email + ":" + password + ":" + namespace;
 	}
 
 }

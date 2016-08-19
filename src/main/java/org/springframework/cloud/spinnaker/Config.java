@@ -17,6 +17,7 @@ package org.springframework.cloud.spinnaker;
 
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.spinnaker.filemanager.TempFileManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,8 +33,9 @@ public class Config {
 	ModuleService moduleService(SpinnakerConfiguration spinnakerConfiguration,
 								CloudFoundryAppDeployerFactory appDeployerFactoryBean,
 								ApplicationContext ctx,
-								CounterService counterService) {
-		return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService);
+								CounterService counterService,
+								TempFileManager fileManager) {
+		return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService, fileManager);
 	}
 
 	@Bean

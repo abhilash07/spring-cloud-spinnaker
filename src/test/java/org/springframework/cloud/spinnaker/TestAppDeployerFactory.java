@@ -21,7 +21,6 @@ import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
-import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryDeployerProperties;
 
 /**
  * @author Greg Turnquist
@@ -38,17 +37,12 @@ public class TestAppDeployerFactory implements CloudFoundryAppDeployerFactory {
 	}
 
 	@Override
-	public CloudFoundryAppDeployer getAppDeployer(CloudFoundryDeployerProperties props, String api, String org, String space, String email, String password, String namespace) {
-		return this.stub;
-	}
-
-	@Override
 	public CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint) {
 		return this.stubClient;
 	}
 
 	@Override
-	public CloudFoundryOperations getOperations(String org, String space, CloudFoundryClient client) {
+	public CloudFoundryOperations getOperations(String email, String password, URL apiEndpoint, String org, String space) {
 		return this.stubOperations;
 	}
 
