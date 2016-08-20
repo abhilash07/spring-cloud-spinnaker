@@ -240,11 +240,13 @@
 			2. Bump up version at the top suitably and commit change
 			3. git tag <version> (like v1.0.0.M1)
 			4. ./build_spinnaker.sh all
-			5. USERNAME=<user> PASSWORD=<password> mvn -Pmilestone clean install deploy -s settings.xml
+			5. USERNAME=<user> PASSWORD=<password> mvn -Pmilestone deploy -s settings.xml
 			   or
-			   USERNAME=<user> PASSWORD=<password> mvn -Prelease clean install deploy -s settings.xml
+			   USERNAME=<user> PASSWORD=<password> mvn -Prelease deploy -s settings.xml
+			   or
+			   USERNAME=<user> PASSWORD=<password> mvn -Pcentral deploy -s settings.xml (for maven central)
 			6. git push
-			7. Inspect handiwork at https://repo.spring.io/
+			7. Inspect handiwork at https://repo.spring.io/ or https://oss.sonatype.org/#stagingRepositories
 		-->
 		<profile>
 			<id>milestone</id>
@@ -341,6 +343,73 @@
 				</repository>
 			</distributionManagement>
 		</profile>
+
+		<profile>
+			<id>central</id>
+
+			<properties>
+				<gpg.useagent>true</gpg.useagent>
+			</properties>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>3.0.0</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<configuration>
+							<additionalparam>-Xdoclint:none</additionalparam>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<distributionManagement>
+				<snapshotRepository>
+					<id>sonatype-nexus-snapshots</id>
+					<name>Sonatype Nexus Snapshots</name>
+					<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+				</snapshotRepository>
+				<repository>
+					<id>sonatype-nexus-staging</id>
+					<name>Nexus Release Repository</name>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+				</repository>
+			</distributionManagement>
+		</profile>
+
 	</profiles>
 
 	<repositories>
