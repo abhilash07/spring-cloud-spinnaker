@@ -123,7 +123,7 @@ class Settings extends React.Component {
 					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
 						<li className={lineItemLayout}>
 							<label className={labelLayout}>Jenkins Password</label>
-							<input className={inputLayout} type="text"
+							<input className={inputLayout} type="password"
 								   placeholder="Jenkins password"
 								   name={this.props.settings.jenkinsPassword} onChange={this.handleChange} />
 						</li>
