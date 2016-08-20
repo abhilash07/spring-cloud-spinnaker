@@ -142,10 +142,18 @@ public class ModuleService {
 		ModuleDetails details = getModuleDetails(module);
 
 		final Resource artifactToDeploy = findArtifact(details, ctx, data);
+
 		final Map<String, String> properties = getProperties(spinnakerConfiguration, details, data);
 
 		final Map<String, String> deploymentProperties = new HashMap<>();
 		deploymentProperties.put(CloudFoundryDeploymentProperties.USE_SPRING_APPLICATION_JSON_KEY, "false");
+		deploymentProperties.put(
+				CloudFoundryDeploymentProperties.SERVICES_PROPERTY_KEY,
+				Stream.concat(
+						details.getServices().stream(),
+						StringUtils.commaDelimitedListToSet(
+								data.getOrDefault(CloudFoundryDeploymentProperties.SERVICES_PROPERTY_KEY, "")).stream())
+					.collect(Collectors.joining(",")));
 
 		Optional.ofNullable(details.getProperties().get("buildpack"))
 				.ifPresent(buildpack -> deploymentProperties.put(CloudFoundryDeploymentProperties.BUILDPACK_PROPERTY_KEY, buildpack));
