@@ -21,7 +21,7 @@ class Settings extends React.Component {
 
 	render() {
 		let labelLayout = 'layout__item u-1/2-lap-and-up u-1/4-desk'
-		let inputLayout = 'layout__item u-1/2-lap-and-up u-1/2-desk'
+		let inputLayout = 'layout__item u-1/2-lap-and-up u-3/4-desk'
 		let lineItemLayout = 'control-group'
 		return (
 			<div>
@@ -171,6 +171,11 @@ class Settings extends React.Component {
 							   value={this.props.settings['deck.primaryAccounts']}/>
 					</li>
 				</ul>
+				<br/>
+				<br/>
+				<br/>
+				<br/>
+				<br/>
 			</div>
 		)
 	}
