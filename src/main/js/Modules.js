@@ -93,6 +93,19 @@ class Modules extends React.Component {
 				data[this.props.settings.slackEnabled] = this.props.settings[this.props.settings.slackEnabled]
 				data[this.props.settings.slackToken] = this.props.settings[this.props.settings.slackToken]
 			}
+			if (this.props.settings[this.props.settings.emailEnabled]) {
+				data[this.props.settings.emailEnabled] = this.props.settings[this.props.settings.emailEnabled]
+				data[this.props.settings.emailFrom] = this.props.settings[this.props.settings.emailFrom]
+				data[this.props.settings.emailUsername] = this.props.settings[this.props.settings.emailUsername]
+				data[this.props.settings.emailPassword] = this.props.settings[this.props.settings.emailPassword]
+				data[this.props.settings.emailSmtpHost] = this.props.settings[this.props.settings.emailSmtpHost]
+				data[this.props.settings.emailSmtpPort] = this.props.settings[this.props.settings.emailSmtpPort]
+				Object.keys(this.props.settings).map(key => {
+					if (key.startsWith('spring.mail.properties')) {
+						data[key] = this.props.settings[key]
+					}
+				})
+			}
 		}
 
 		if (moduleDetails.deploymentId.startsWith('igor')) {

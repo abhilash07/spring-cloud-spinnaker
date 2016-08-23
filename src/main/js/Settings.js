@@ -1,15 +1,23 @@
 'use strict'
 
 const React = require('react')
+const TextInput = require('./TextInput')
+const PasswordInput = require('./PasswordInput')
+const CheckboxInput = require('./CheckboxInput')
+const VariableInput = require('./VariableInput')
 
 class Settings extends React.Component {
 
 	constructor(props) {
 		super(props)
-		this.state = {}
 		this.handleChange = this.handleChange.bind(this)
 	}
 
+	/**
+	 * React.js needs checkbox events to propagate in order to display properly. Otherwise,
+	 * don't propagate and handle here.
+	 * @param e
+	 */
 	handleChange(e) {
 		if (e.target.type === 'checkbox') {
 			this.props.updateSetting(e.target.name, e.target.checked)
@@ -20,156 +28,174 @@ class Settings extends React.Component {
 	}
 
 	render() {
-		let labelLayout = 'layout__item u-1/2-lap-and-up u-1/4-desk'
-		let inputLayout = 'layout__item u-1/2-lap-and-up u-3/4-desk'
-		let lineItemLayout = 'control-group'
 		return (
 			<div>
 				<ul className="layout">
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Redis Service</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Name of Redis service to bind to"
-							   name="spring.cloud.deployer.cloudfoundry.services" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Default Org</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Primary organization Spinnaker will deploy to"
-							   name="providers.cf.defaultOrg" onChange={this.handleChange}
-							   value={this.props.settings['providers.cf.defaultOrg']}/>
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Default Space</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Primary space Spinnaker will deploy to"
-							   name="providers.cf.defaultSpace" onChange={this.handleChange}
-							   value={this.props.settings['providers.cf.defaultSpace']}/>
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Primary Account API</label>
-						<input className={inputLayout} type="text"
-							   placeholder="API for Spinnaker to make deployments"
-							   name="providers.cf.primaryCredentials.api" onChange={this.handleChange}
-							   value={this.props.settings['providers.cf.primaryCredentials.api']} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Primary Account Console</label>
-						<input className={inputLayout} type="text"
-							   placeholder="App Manager URL for default space"
-							   name="providers.cf.primaryCredentials.console" onChange={this.handleChange}
-						/>
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Account Name</label>
-						<input className={inputLayout} type="text"
-							   placeholder="User id for making deployments"
-							   name="cf.account.name" onChange={this.handleChange}
-							   value={this.props.settings['cf.account.name']}/>
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Account Password</label>
-						<input className={inputLayout} type="password"
-							   placeholder="Password for making deployments"
-							   name="cf.account.password" onChange={this.handleChange}
-							   value={this.props.settings['cf.account.password']}/>
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Repository Name/Access Code</label>
-						<input className={inputLayout} type="text"
-							   placeholder="User/Access code to pull down artifacts"
-							   name="cf.repo.username" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Repository Password/Secret Code</label>
-						<input className={inputLayout} type="password"
-							   placeholder="Password/Secret code to pull down artifacts"
-							   name="cf.repo.password" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Jenkins?</label>
-						<input className={inputLayout} type="checkbox"
-							   name="jenkins.enabled"
-							   checked={this.props.settings[this.props.settings.jenkinsEnabled]}
-							   onChange={this.handleChange} />
-					</li>
+					<TextInput label="Redis Service"
+							   placeHolder="Name of Redis service to bind to"
+							   name={this.props.settings.services}
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Default Org"
+							   placeHolder="Primary organization Spinnaker will deploy to"
+							   name="providers.cf.defaultOrg"
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Default Space"
+							   placeHolder="Primary space Spinnaker will deploy to"
+							   name="providers.cf.defaultSpace"
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Primary Account API"
+							   placeHolder="API for Spinnaker to make deployments"
+							   name="providers.cf.primaryCredentials.api"
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Primary Account Console"
+							   placeHolder="e.g. https://console.run.pivotal.io or https://apps.example.com"
+							   name="providers.cf.primaryCredentials.console"
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Account Name"
+							   placeHolder="User id for making deployments"
+							   name={this.props.settings.accountName}
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<PasswordInput label="Account Password"
+								   placeHolder="Password for making deployments"
+								   name={this.props.settings.accountPassword}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+					<TextInput label="Repository Name/Access Code"
+							   placeHolder="User/Access code to pull down artifacts"
+							   name={this.props.settings.repoUsername}
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<PasswordInput label="Repository Password/Secret Code"
+								   placeHolder="Password/Secret code to pull down artifact"
+								   name={this.props.settings.repoPassword}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+					<CheckboxInput label="Jenkins?"
+								   name={this.props.settings.jenkinsEnabled}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
-						<li className={lineItemLayout}>
-							<label className={labelLayout}>Jenkins Name</label>
-							<input className={inputLayout} type="text"
-								   placeholder="Name of your instance of Jenkins"
-								   name={this.props.settings.jenkinsName} onChange={this.handleChange} />
-						</li>
+						<TextInput label="Jenkins Name"
+								   placeHolder="Name of your instance of Jenkins"
+								   name={this.props.settings.jenkinsName}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 						: null
 					}
 					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
-						<li className={lineItemLayout}>
-							<label className={labelLayout}>Jenkins Base URL</label>
-							<input className={inputLayout} type="text"
-								   placeholder="URL of your Jenkins server"
-								   name={this.props.settings.jenkinsUrl} onChange={this.handleChange} />
-						</li>
+						<TextInput label="Jenkins Base URL"
+								   placeHolder="URL of your Jenkins server"
+								   name={this.props.settings.jenkinsUrl}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 						: null
 					}
 					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
-						<li className={lineItemLayout}>
-							<label className={labelLayout}>Jenkins Username</label>
-							<input className={inputLayout} type="text"
-								   placeholder="Jenkins username"
-								   name={this.props.settings.jenkinsUsername} onChange={this.handleChange} />
-						</li>
+						<TextInput label="Jenkins Username"
+								   placeHolder="Jenkins username"
+								   name={this.props.settings.jenkinsUsername}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 						: null
 					}
 					{ this.props.settings[this.props.settings.jenkinsEnabled] ?
-						<li className={lineItemLayout}>
-							<label className={labelLayout}>Jenkins Password</label>
-							<input className={inputLayout} type="password"
-								   placeholder="Jenkins password"
-								   name={this.props.settings.jenkinsPassword} onChange={this.handleChange} />
-						</li>
+						<PasswordInput label="Jenkins Password"
+									   placeHolder="Jenkins password"
+									   name={this.props.settings.jenkinsPassword}
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
 						: null
 					}
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Slack?</label>
-						<input className={inputLayout} type="checkbox"
-							   name={this.props.settings.slackEnabled}
-							   checked={this.props.settings[this.props.settings.slackEnabled]}
-							   onChange={this.handleChange} />
-					</li>
+					<CheckboxInput label="Slack?"
+								   name={this.props.settings.slackEnabled}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 					{ this.props.settings[this.props.settings.slackEnabled] ?
-						<li className={lineItemLayout}>
-							<label className={labelLayout}>Slack Token (Use Bot not Webhook)</label>
-							<input className={inputLayout} type="text"
-								   placeholder="Bot token value (NOT Webhook token)"
-								   name={this.props.settings.slackToken} onChange={this.handleChange}/>
-						</li>
+						<TextInput label="Slack Token (Use Bot not Webhook)"
+								   placeHolder="Bot token value (NOT Webhook token)"
+								   name={this.props.settings.slackToken}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
 						: null
 					}
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Spring Config Location override</label>
-						<input className={inputLayout} type="text"
-							   placeholder="List of property file URL overrides for Spinnaker"
-							   name="spring.config.location" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Domain</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Domain of Spinnaker and deployments, e.g. cfapps.io"
-							   name="deck.domain" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Primary Account Name</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Name of the primary account (e.g. prod)"
-							   name="deck.primaryAccount" onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>All Account Names (separated by commas)</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Listing of all accounts (e.g. prod,staging,dev)"
-							   name="deck.primaryAccounts" onChange={this.handleChange}
-							   value={this.props.settings['deck.primaryAccounts']}/>
-					</li>
+					<CheckboxInput label="Email?"
+								   name={this.props.settings.emailEnabled}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<TextInput label="Email From"
+								   placeHolder="Your friendly neighorhood Spinnaker <spinnaker@example.com>"
+								   name={this.props.settings.emailFrom}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<TextInput label="Email Username"
+								   placeHolder="spinnaker@example.com"
+								   name={this.props.settings.emailUsername}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<PasswordInput label="Email Password"
+									   placeHolder="Your super secret password for this email account"
+									   name={this.props.settings.emailPassword}
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<TextInput label="SMTP Host"
+								   placeHolder="smtp.gmail.com"
+								   name={this.props.settings.emailSmtpHost}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<TextInput label="SMTP Port"
+								   placeHolder="587"
+								   name={this.props.settings.emailSmtpPort}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.emailEnabled] ?
+						<VariableInput
+							prefix="spring.mail.properties."
+							removeEntry={this.props.removeEntry}
+							updateSetting={this.props.updateSetting}
+							settings={this.props.settings} />
+						: null
+					}
+					<TextInput label="Spring Config Location override"
+							   placeHolder="List of property file URL overrides for Spinnaker"
+							   name='spring.config.location'
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Domain"
+							   placeHolder="Domain of Spinnaker and deployments, e.g. cfapps.io"
+							   name='deck.domain'
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Primary Account Name"
+							   placeHolder="Name of the primary account (e.g. prod)"
+							   name='deck.primaryAccount'
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="All Account Names (separated by commas)"
+							   placeHolder="Listing of all accounts (e.g. prod,staging,dev)"
+							   name='deck.primaryAccounts'
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
 				</ul>
 				<br/>
 				<br/>

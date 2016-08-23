@@ -33,8 +33,15 @@ class Application extends React.Component {
 			jenkinsName: 'services.jenkins.defaultMaster.name',
 			jenkinsUrl: 'services.jenkins.defaultMaster.baseUrl',
 			jenkinsUsername: 'services.jenkins.defaultMaster.username',
-			jenkinsPassword: 'services.jenkins.defaultMaster.password'
+			jenkinsPassword: 'services.jenkins.defaultMaster.password',
+			emailEnabled: 'mail.enabled',
+			emailFrom: 'mail.from',
+			emailSmtpHost: 'spring.mail.host',
+			emailSmtpPort: 'spring.mail.port',
+			emailUsername: 'spring.mail.username',
+			emailPassword: 'spring.mail.password'
 		}
+		this.removeEntry = this.removeEntry.bind(this)
 		this.updateSetting = this.updateSetting.bind(this)
 		this.handleSettings = this.handleSettings.bind(this)
 		this.handleStatus = this.handleStatus.bind(this)
@@ -43,9 +50,26 @@ class Application extends React.Component {
 		this.isActive = this.isActive.bind(this)
 	}
 
+	removeEntry(key) {
+		let newState = this.state
+		delete newState[key]
+		this.setState(newState)
+	}
+
 	updateSetting(key, value) {
+		/**
+		 * Copy the supplied value into a key.
+		 */
 		let newState = {}
 		newState[key] = value
+
+		/**
+		 * Collection of special rules, that when filling out one field, causes another one to be filled out.
+		 */
+
+		/**
+		 * Copy one field into another, automatically. NOTE: It's one-way.
+		 */
 		if (key === this.state.api) {
 			newState['providers.cf.primaryCredentials.api'] = value
 		}
@@ -63,6 +87,31 @@ class Application extends React.Component {
 		}
 		if (key === this.state.primaryAccount) {
 			newState[this.state.primaryAccounts] = value
+		}
+
+		/**
+		 * If user is filling out email username, use it to pre-select some common
+		 * SMTP settings
+		 */
+		if (key === this.state.emailUsername) {
+			if (value.endsWith('@gmail.com')) {
+				newState[this.state.emailSmtpHost] = 'smtp.gmail.com'
+				newState[this.state.emailSmtpPort] = '587'
+			} else if (value.endsWith('@yahoo.com')) {
+				newState[this.state.emailSmtpHost] = 'smtp.yahoo.com'
+				newState[this.state.emailSmtpPort] = '587'
+			} else {
+				newState[this.state.emailSmtpHost] = ''
+				newState[this.state.emailSmtpPort] = ''
+			}
+		}
+
+		if (key === this.state.emailEnabled) {
+			if (value === true) {
+				newState['spring.mail.properties.mail.smtp.auth'] = 'true'
+				newState['spring.mail.properties.mail.smtp.starttls.enable'] = 'true'
+				newState['spring.mail.properties.mail.debug'] = 'true'
+			}
 		}
 
 		this.setState(newState)
@@ -112,6 +161,7 @@ class Application extends React.Component {
 										   settings={this.state}/>
 						<h1>Spinnaker Settings</h1>
 						<Settings updateSetting={this.updateSetting}
+								  removeEntry={this.removeEntry}
 								  settings={this.state} />
 					</div>
 
