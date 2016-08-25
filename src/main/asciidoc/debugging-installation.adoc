@@ -1,0 +1,95 @@
+[[debugging-installation]]
+= Debugging Your Installation
+
+[partintro]
+--
+Having trouble with your Spinnaker install? This section is meant to help you unravel things before you open a ticket.
+--
+
+== Logs, logs, and more logs
+
+When you are attempting to install Spinnaker, there are logs everywhere. The key is to find the right ones.
+
+* Spring Cloud Spinnaker can log information about the deployment process, but once completed, it doesn't gather any more information
+* Each Spinnaker module will print out its own logs.
+
+Assuming you installed Spinnaker with a namespace of "test", you can gather information like this...
+
+----
+$ cf logs clouddriver-test
+----
+
+In another shell
+
+----
+$ cf restart clouddriver-test
+----
+
+If you watch the "cf logs" command, you should see your copy of clouddriver start up. If there's a major issue, it should render an error,
+especially it it's missing settings.
+
+----
+2016-09-06T11:32:31.91-0500 [API/0]      OUT Updated app with guid 39bc3f7b-ee7f-45f2-bac9-053069092c7a ({"state"=>"STARTED"})
+2016-09-06T11:32:32.22-0500 [APP/0]      OUT Exit status 143
+2016-09-06T11:32:32.25-0500 [CELL/0]     OUT Creating container
+2016-09-06T11:32:32.25-0500 [CELL/0]     OUT Destroying container
+2016-09-06T11:32:32.71-0500 [CELL/0]     OUT Successfully destroyed container
+2016-09-06T11:32:33.02-0500 [CELL/0]     OUT Successfully created container
+2016-09-06T11:32:39.29-0500 [CELL/0]     OUT Starting health monitoring of container
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT   .   ____          _            __ _ _
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT   '  |____| .__|_| |_|_| |_\__, | / / / /
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT  =========|_|==============|___/=/_/_/_/
+2016-09-06T11:32:44.71-0500 [APP/0]      OUT  :: Spring Boot ::        (v1.2.8.RELEASE)
+2016-09-06T11:32:44.85-0500 [APP/0]      OUT 2016-09-06 16:32:44.851  INFO 18 --- [           main] pertySourceApplicationContextInitializer : Adding 'cloud' PropertySource to ApplicationContext
+...
+...
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.126  INFO 18 --- [           main] s.d.spring.web.caching.CachingAspect     : Caching aspect applied for cache modelProperties with key com.netflix.spinnaker.clouddriver.model.Network(true)
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.126  INFO 18 --- [           main] s.d.spring.web.OperationsKeyGenerator    : Cache key generated: /vpcs.com.netflix.spinnaker.clouddriver.controllers.VpcController.list.DefaultGenericTypeNamingStrategy
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.126  INFO 18 --- [           main] s.d.spring.web.caching.CachingAspect     : Caching aspect applied for cache operations with key /vpcs.com.netflix.spinnaker.clouddriver.controllers.VpcController.list.DefaultGenericTypeNamingStrategy
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.126  INFO 18 --- [           main] s.w.ClassOrApiAnnotationResourceGrouping : Group for method list was vpc-controller
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.127  INFO 18 --- [           main] s.w.ClassOrApiAnnotationResourceGrouping : Group for method list was vpc-controller
+2016-09-06T11:33:06.12-0500 [APP/0]      OUT 2016-09-06 16:33:06.127  INFO 18 --- [           main] .d.s.w.r.o.CachingOperationNameGenerator : Generating unique operation named: listUsingGET_10
+2016-09-06T11:33:06.28-0500 [APP/0]      OUT 2016-09-06 16:33:06.282  INFO 18 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8080 (http)
+2016-09-06T11:33:06.28-0500 [APP/0]      OUT 2016-09-06 16:33:06.286  INFO 18 --- [           main] com.netflix.spinnaker.clouddriver.Main   : Started Main in 24.791 seconds (JVM running for 26.911)
+2016-09-06T11:33:06.57-0500 [CELL/0]     OUT Container became healthy
+----
+
+* In this console output, you can see that clouddriver is running with Spring Boot 1.2.8.RELEASE.
+* The "Started Main in 24.791 seconds" is the indicator that the app is finally up.
+* "Container became healthy" is the indicator that the platform can see the app as being up.
+
+== Environment settings
+
+To apply various settings, Spring Cloud Spinnaker "cf pushes" the module and then applies various environment variables settings in Cloud Foundry.
+Pay note: it's a LOT of settings. If you see a deployment either empty of environment variables or only containing SPRING_APPLICATION_JSON, then
+something has gone terribly wrong with the deployment.
+
+.Sample of environment variables for clouddriver in the namespace of "spring"
+[.bordered]
+image::clouddriver-env-vars.png[]
+
+Each of the services has a URL to reach the other relevant microservices. In this case, you can how it builds up the URL for clouddriver to speak to echo.
+
+In this specific example:
+
+* service.echo.baseUrl = ${services.default.protocol}://${services.echo.host}${namespace}.${deck.domain}
+* services.default.protocol = https
+* services.echo.host = echo
+* namespace = -spring
+* deck.domain = cfapps.io
+
+This allows the deployer to flexibly adjust each piece as needed.
+
+
+== Manually deploying Spinnaker
+
+You may be tempted to simple grab the fat JARs for clouddriver, deck, etc. and push them yourself. Unfortunately, that's not an option (yet).
+
+* Each module needs its own property file. clouddriver has clouddriver.yml, igor has igor.yml, etc. But they aren't included in the JARs pulled from
+bintray. Netflix wraps each module in a Debian package and has those files in a different location. Spring Cloud Spinnaker grabs those JARs and
+dynamically inserts such files right before pushing to your Cloud Foundry instance.
+
+

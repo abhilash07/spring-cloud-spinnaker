@@ -51,6 +51,12 @@
 		<spring-cloud-deployer-cloudfoundry.version>1.0.0.RELEASE</spring-cloud-deployer-cloudfoundry.version>
 		<reactor.version>3.0.0.RELEASE</reactor.version>
 		<jackson.version>2.7.4</jackson.version>
+
+		<!-- Properties to build documentation -->
+		<docs.main>spring-cloud-spinnaker</docs.main>
+		<!-- Comma separated list of whitelisted branches -->
+		<docs.whitelisted.branches>master</docs.whitelisted.branches>
+		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
 
 	<dependencies>
@@ -407,6 +413,43 @@
 					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 				</repository>
 			</distributionManagement>
+		</profile>
+
+		<profile>
+			<id>docs</id>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.asciidoctor</groupId>
+						<artifactId>asciidoctor-maven-plugin</artifactId>
+						<version>1.5.3</version>
+						<executions>
+							<execution>
+								<id>output-html</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>process-asciidoc</goal>
+								</goals>
+								<configuration>
+									<sourceDirectory>${basedir}/src/main/asciidoc</sourceDirectory>
+									<sourceDocumentName>index.adoc</sourceDocumentName>
+									<backend>html</backend>
+									<doctype>book</doctype>
+									<attributes>
+										<docinfo>true</docinfo>
+										<stylesheet>css/manual-singlepage.css</stylesheet>
+										<spring-version>${spring.version}</spring-version>
+										<spring-cloud-spinnaker-version>${project.version}</spring-cloud-spinnaker-version>
+										<spring-cloud-spinnaker-docs-version>${project.version}</spring-cloud-spinnaker-docs-version>
+										<github-tag>v${project.version}</github-tag>
+									</attributes>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 
 	</profiles>
