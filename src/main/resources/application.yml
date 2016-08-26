@@ -38,7 +38,7 @@ spinnaker:
 #      services:
 #        - spinnaker-redis
   properties:
-    JBP_CONFIG_DEBUG: '{enabled: true}' # TODO: Remove
+#    JBP_CONFIG_DEBUG: '{enabled: true}' # Reenable and then cf restage if you need to remotely debug
     providers.cf.enabled: true
     providers.cf.primaryCredentials.name: ${deck.primaryAccount}
 #    spring.config.location: https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/spinnaker-local.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}.yml,https://raw.githubusercontent.com/{org}/spinnaker-config/{label}/{module}-local.yml
