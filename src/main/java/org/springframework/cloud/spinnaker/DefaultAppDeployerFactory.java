@@ -17,6 +17,7 @@ package org.springframework.cloud.spinnaker;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -87,6 +88,7 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 		return DefaultConnectionContext.builder()
 				.apiHost(apiEndpoint.getHost())
 				.skipSslValidation(true)
+				.sslHandshakeTimeout(Duration.ofSeconds(60))
 				.build();
 	}
 

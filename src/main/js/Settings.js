@@ -112,6 +112,42 @@ class Settings extends React.Component {
 									   settings={this.props.settings} />
 						: null
 					}
+					<CheckboxInput label="Travis?"
+								   name={this.props.settings.travisEnabled}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+					{ this.props.settings[this.props.settings.travisEnabled] ?
+						<TextInput label="Travis Name"
+								   placeHolder="Name of your instance of Travis"
+								   name={this.props.settings.travisName}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.travisEnabled] ?
+						<TextInput label="Travis Base URL"
+								   placeHolder="URL of your Travis server, e.g. https://travis-ci.org"
+								   name={this.props.settings.travisUrl}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.travisEnabled] ?
+						<TextInput label="Travis API URL"
+								   placeHolder="Travis API URL, e.g. https://api.travis-ci.org"
+								   name={this.props.settings.travisAddress}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+						: null
+					}
+					{ this.props.settings[this.props.settings.travisEnabled] ?
+						<PasswordInput label="Travis GitHub Personal Access Token"
+									   placeHolder="Travis GitHub Personal Access Token"
+									   name={this.props.settings.travisToken}
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+						: null
+					}
 					<CheckboxInput label="Slack?"
 								   name={this.props.settings.slackEnabled}
 								   handleChange={this.handleChange}

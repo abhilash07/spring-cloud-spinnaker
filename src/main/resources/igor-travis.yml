@@ -1,0 +1,7 @@
+travis:
+  masters:
+    -
+      name: ${services.travis.defaultMaster.name}
+      baseUrl: ${services.travis.defaultMaster.baseUrl}
+      address: ${services.travis.defaultMaster.address}
+      githubToken: ${services.travis.defaultMaster.githubToken}

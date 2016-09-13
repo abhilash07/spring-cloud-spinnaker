@@ -116,6 +116,13 @@ class Modules extends React.Component {
 				data[this.props.settings.jenkinsUsername] = this.props.settings[this.props.settings.jenkinsUsername]
 				data[this.props.settings.jenkinsPassword] = this.props.settings[this.props.settings.jenkinsPassword]
 			}
+			if (this.props.settings[this.props.settings.travisEnabled]) {
+				data[this.props.settings.travisEnabled] = this.props.settings[this.props.settings.travisEnabled]
+				data[this.props.settings.travisName] = this.props.settings[this.props.settings.travisName]
+				data[this.props.settings.travisUrl] = this.props.settings[this.props.settings.travisUrl]
+				data[this.props.settings.travisAddress] = this.props.settings[this.props.settings.travisAddress]
+				data[this.props.settings.travisToken] = this.props.settings[this.props.settings.travisToken]
+			}
 		}
 
 		data[this.props.settings.domain] = this.props.settings[this.props.settings.domain]

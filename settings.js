@@ -47,7 +47,7 @@ window.spinnakerSettings = {
   },
   authEnabled: false,
   gitSources: ['stash', 'github'],
-  triggerTypes: ['git', 'pipeline', 'docker', 'cron', 'jenkins'],
+  triggerTypes: ['git', 'pipeline', 'docker', 'cron', 'jenkins', 'travis'],
   feature: {
     pipelines: true,
     notifications: false,
