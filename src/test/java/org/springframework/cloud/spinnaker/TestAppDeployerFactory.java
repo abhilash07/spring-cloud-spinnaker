@@ -32,7 +32,7 @@ public class TestAppDeployerFactory implements CloudFoundryAppDeployerFactory {
 	private CloudFoundryOperations stubOperations;
 
 	@Override
-	public CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace) {
+	public CloudFoundryAppDeployer getAppDeployer(URL api, String org, String space, String email, String password, String namespace) {
 		return this.stub;
 	}
 

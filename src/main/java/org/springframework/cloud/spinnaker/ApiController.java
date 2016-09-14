@@ -17,6 +17,8 @@ package org.springframework.cloud.spinnaker;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
 
+import java.net.URL;
+
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.ResourceSupport;
 import org.springframework.http.ResponseEntity;
@@ -31,8 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ApiController {
 
-	@RequestMapping(method = RequestMethod.GET, value = ModuleController.BASE_PATH, produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> root(@RequestParam("api") String api,
+	public static final String BASE_PATH = "/api";
+
+	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH, produces = MediaTypes.HAL_JSON_VALUE)
+	public ResponseEntity<?> root(@RequestParam("api") URL api,
 								  @RequestParam("org") String org,
 								  @RequestParam("space") String space,
 								  @RequestParam("email") String email,
@@ -43,6 +47,7 @@ public class ApiController {
 
 		root.add(linkTo(methodOn(ApiController.class).root(api, org, space, email, password, namespace)).withSelfRel());
 		root.add(linkTo(methodOn(ModuleController.class).statuses(api, org, space, email, password, namespace)).withRel("modules"));
+		root.add(linkTo(methodOn(ServicesController.class).listServices(null, api, org, space, email, password)).withRel("services"));
 
 		return ResponseEntity.ok(root);
 	}

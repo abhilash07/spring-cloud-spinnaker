@@ -15,7 +15,6 @@
  */
 package org.springframework.cloud.spinnaker;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.HashMap;
@@ -44,11 +43,11 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 	private final Map<String, CloudFoundryAppDeployer> cachedDeployers = new HashMap<>();
 
 	@Override
-	public CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace) {
+	public CloudFoundryAppDeployer getAppDeployer(URL apiEndpoint, String org, String space, String email, String password, String namespace) {
 
 		return this.cachedDeployers.computeIfAbsent(
-				getKey(api, org, space, email, password, namespace),
-				s -> doCreate(api, org, space, email, password));
+				getKey(apiEndpoint, org, space, email, password, namespace),
+				s -> doCreate(apiEndpoint, org, space, email, password));
 	}
 
 	@Override
@@ -66,17 +65,10 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 		return doCreateOperations(client, context, tokenProvider, org, space);
 	}
 
-	private CloudFoundryAppDeployer doCreate(String api, String org, String space, String email, String password) {
+	private CloudFoundryAppDeployer doCreate(URL api, String org, String space, String email, String password) {
 
-		final URL apiEndpoint;
-		try {
-			apiEndpoint = new URL(api);
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
-
-		CloudFoundryClient client = getCloudFoundryClient(email, password, apiEndpoint);
-		CloudFoundryOperations operations = getOperations(email, password, apiEndpoint, org, space);
+		CloudFoundryClient client = getCloudFoundryClient(email, password, api);
+		CloudFoundryOperations operations = getOperations(email, password, api, org, space);
 
 		return new CloudFoundryAppDeployer(
 				new CloudFoundryConnectionProperties(),
@@ -132,8 +124,8 @@ public class DefaultAppDeployerFactory implements CloudFoundryAppDeployerFactory
 				.build();
 	}
 
-	private String getKey( String api, String org, String space, String email, String password, String namespace) {
-		return api + ":" + org + ":" + space + ":" + email + ":" + password + ":" + namespace;
+	private String getKey(URL api, String org, String space, String email, String password, String namespace) {
+		return api.toString() + ":" + org + ":" + space + ":" + email + ":" + password + ":" + namespace;
 	}
 
 }

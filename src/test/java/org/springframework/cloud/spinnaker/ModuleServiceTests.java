@@ -27,6 +27,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,7 +107,7 @@ public class ModuleServiceTests {
 				.build());
 
 		// when
-		AppStatus status = moduleService.getStatus("clouddriver", "api", "org", "space", "user", "password", "");
+		AppStatus status = moduleService.getStatus("clouddriver", new URL("http://api.example.com"), "org", "space", "user", "password", "");
 
 		// then
 		assertThat(status.getState(), equalTo(DeploymentState.deployed));
@@ -130,7 +132,7 @@ public class ModuleServiceTests {
 		thrown.expectMessage(containsString("Module 'nothing' is not managed by this system"));
 
 		// when
-		moduleService.getStatus("nothing", "api", "org", "space", "user", "password", "");
+		moduleService.getStatus("nothing", new URL("http://api.example.com"), "org", "space", "user", "password", "");
 
 		// then
 		// JUnit exception conditions are at the top
@@ -173,7 +175,7 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("clouddriver", data, "http://example.com", "org", "space", "user", "password", "");
+		moduleService.deploy("clouddriver", data, new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
@@ -222,7 +224,7 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("clouddriver", data, "http://example.com", "org", "space", "user", "password", "namespace");
+		moduleService.deploy("clouddriver", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
@@ -235,7 +237,7 @@ public class ModuleServiceTests {
 	}
 
 	@Test
-	public void shouldHandleUndeployingAnApp() {
+	public void shouldHandleUndeployingAnApp() throws MalformedURLException {
 
 		// given
 		CloudFoundryClient client = mock(CloudFoundryClient.class);
@@ -251,7 +253,7 @@ public class ModuleServiceTests {
 		given(applications.delete(any())).willReturn(Mono.empty());
 
 		// when
-		moduleService.undeploy("clouddriver", "http://example.com", "org", "space", "user", "password", "");
+		moduleService.undeploy("clouddriver", new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(applications).should().delete(any());

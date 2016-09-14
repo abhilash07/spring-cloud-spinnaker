@@ -27,7 +27,7 @@ import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeploy
  */
 public interface CloudFoundryAppDeployerFactory {
 
-	CloudFoundryAppDeployer getAppDeployer(String api, String org, String space, String email, String password, String namespace);
+	CloudFoundryAppDeployer getAppDeployer(URL apiEndpoint, String org, String space, String email, String password, String namespace);
 
 	CloudFoundryClient getCloudFoundryClient(String email, String password, URL apiEndpoint);
 

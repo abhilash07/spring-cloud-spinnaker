@@ -44,7 +44,10 @@ class Application extends React.Component {
 			emailSmtpHost: 'spring.mail.host',
 			emailSmtpPort: 'spring.mail.port',
 			emailUsername: 'spring.mail.username',
-			emailPassword: 'spring.mail.password'
+			emailPassword: 'spring.mail.password',
+			pickRedisFromDropdown: 'pick.redis.from.downdown',
+			redisInstances: 'redis.instances',
+			'redis.instances': []
 		}
 		this.removeEntry = this.removeEntry.bind(this)
 		this.updateSetting = this.updateSetting.bind(this)

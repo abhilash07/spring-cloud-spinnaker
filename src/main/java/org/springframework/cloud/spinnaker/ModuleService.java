@@ -15,9 +15,11 @@
  */
 package org.springframework.cloud.spinnaker;
 
+import static java.util.stream.Stream.*;
+import static org.cloudfoundry.util.DelayUtils.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -60,9 +62,6 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-
-import static java.util.stream.Stream.concat;
-import static org.cloudfoundry.util.DelayUtils.exponentialBackOff;
 
 /**
  * A service to handle module level operations.
@@ -109,11 +108,11 @@ public class ModuleService {
 	 *
 	 * @return a {@link Stream} of {@link AppStatus}'s
 	 */
-	public Stream<AppStatus> getStatuses(String api, String org, String space, String email, String password, String namespace) {
+	public Stream<AppStatus> getStatuses(URL apiEndpoint, String org, String space, String email, String password, String namespace) {
 
 		return spinnakerConfiguration.getModules().stream()
 			.map(ModuleDetails::getName)
-			.map(name -> appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace).status(name + namespace));
+			.map(name -> appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace).status(name + namespace));
 	}
 
 	/**
@@ -122,7 +121,7 @@ public class ModuleService {
 	 * @param name
 	 * @return the {@link AppStatus} of the module
 	 */
-	public AppStatus getStatus(String name, String api, String org, String space, String email, String password, String namespace) {
+	public AppStatus getStatus(String name, URL api, String org, String space, String email, String password, String namespace) {
 
 		return lookupModule(name)
 			.map(details -> details.getName())
@@ -137,7 +136,7 @@ public class ModuleService {
 	 * @param data
 	 * @throws IOException
 	 */
-	public void deploy(String module, Map<String, String> data, String api, String org, String space, String email, String password, String namespace) throws IOException {
+	public void deploy(String module, Map<String, String> data, URL apiEndpoint, String org, String space, String email, String password, String namespace) throws IOException {
 
 		ModuleDetails details = getModuleDetails(module);
 
@@ -158,7 +157,7 @@ public class ModuleService {
 		Optional.ofNullable(details.getProperties().get("buildpack"))
 				.ifPresent(buildpack -> deploymentProperties.put(CloudFoundryDeploymentProperties.BUILDPACK_PROPERTY_KEY, buildpack));
 
-		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
+		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace);
 
 		log.debug("Uploading " + artifactToDeploy + "...");
 
@@ -185,25 +184,21 @@ public class ModuleService {
 	 *
 	 * @param name
 	 */
-	public void undeploy(String name, String api, String org, String space, String email, String password, String namespace) {
+	public void undeploy(String name, URL apiEndpoint, String org, String space, String email, String password, String namespace) {
 
-		try {
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
+		CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, apiEndpoint, org, space);
 
-			// TODO: Migrate to new SPI with reactive interface.
-			//appDeployer.undeploy(name);
+		// TODO: Migrate to new SPI with reactive interface.
+		//appDeployer.undeploy(name);
 
-			operations.applications()
-				.delete(DeleteApplicationRequest.builder()
-					.name(name)
-					.deleteRoutes(true)
-					.build())
-				.block(Duration.ofMinutes(5));
+		operations.applications()
+			.delete(DeleteApplicationRequest.builder()
+				.name(name)
+				.deleteRoutes(true)
+				.build())
+			.block(Duration.ofMinutes(5));
 
-			counterService.increment(String.format(METRICS_UNDEPLOYED, name));
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
+		counterService.increment(String.format(METRICS_UNDEPLOYED, name));
 	}
 
 	/**
@@ -211,28 +206,23 @@ public class ModuleService {
 	 *
 	 * @param name
 	 */
-	public void start(String name, String api, String org, String space, String email, String password, String namespace) {
+	public void start(String name, URL apiEndpoint, String org, String space, String email, String password, String namespace) {
 
-		try {
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
+		CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, apiEndpoint, org, space);
 
-			CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
+		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace);
 
-			operations.applications()
-				.start(StartApplicationRequest.builder()
-					.name(name)
-					.build())
-				.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
-					.filter(appStatus ->
-						appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
-					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-					.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
-					.doOnError(e -> log.error(String.format("Unable to start %s", name))))
-				.block(Duration.ofMinutes(10));
-
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
+		operations.applications()
+			.start(StartApplicationRequest.builder()
+				.name(name)
+				.build())
+			.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+				.filter(appStatus ->
+					appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.failed)
+				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+				.doOnSuccess(v -> log.debug(String.format("Successfully started %s", name)))
+				.doOnError(e -> log.error(String.format("Unable to start %s", name))))
+			.block(Duration.ofMinutes(10));
 	}
 
 	/**
@@ -240,27 +230,22 @@ public class ModuleService {
 	 *
 	 * @param name
 	 */
-	public void stop(String name, String api, String org, String space, String email, String password, String namespace) {
+	public void stop(String name, URL apiEndpoint, String org, String space, String email, String password, String namespace) {
 
-		try {
-			CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, new URL(api), org, space);
+		CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, apiEndpoint, org, space);
 
-			CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(api, org, space, email, password, namespace);
+		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace);
 
-			operations.applications()
-				.stop(StopApplicationRequest.builder()
-					.name(name)
-					.build())
-				.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
-					.filter(appStatus -> appStatus.getState() == DeploymentState.unknown)
-					.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-					.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
-					.doOnError(e -> log.error(String.format("Unable to stop %s", name))))
-				.block(Duration.ofSeconds(30));
-
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
+		operations.applications()
+			.stop(StopApplicationRequest.builder()
+				.name(name)
+				.build())
+			.then(() -> Mono.defer(() -> Mono.just(appDeployer.status(name)))
+				.filter(appStatus -> appStatus.getState() == DeploymentState.unknown)
+				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
+				.doOnSuccess(v -> log.debug(String.format("Successfully stopped %s", name)))
+				.doOnError(e -> log.error(String.format("Unable to stop %s", name))))
+			.block(Duration.ofSeconds(30));
 	}
 
 	/**

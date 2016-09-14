@@ -5,12 +5,21 @@ const TextInput = require('./TextInput')
 const PasswordInput = require('./PasswordInput')
 const CheckboxInput = require('./CheckboxInput')
 const VariableInput = require('./VariableInput')
+const DropdownInput = require('./DropdownInput')
+
+const client = require('./client')
+const follow = require('./follow')
 
 class Settings extends React.Component {
 
 	constructor(props) {
 		super(props)
 		this.handleChange = this.handleChange.bind(this)
+		this.toggleOff = this.toggleOff.bind(this)
+		this.toggleOn = this.toggleOn.bind(this)
+		this.loadRedisServices = this.loadRedisServices.bind(this)
+		this.listRedisServices = this.listRedisServices.bind(this)
+		this.currentRedisInstanceIsListed = this.currentRedisInstanceIsListed.bind(this)
 	}
 
 	/**
@@ -27,15 +36,86 @@ class Settings extends React.Component {
 		}
 	}
 
+	toggleOff(e) {
+		e.preventDefault()
+		this.props.updateSetting(e.target.name, false)
+	}
+
+	toggleOn(e) {
+		e.preventDefault()
+		this.props.updateSetting(e.target.name, true)
+	}
+
+	loadRedisServices() {
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+
+		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
+
+		follow(client, root, [{rel: 'services', params: {serviceType: 'redis'}}]).done(response => {
+			let redisInstanceNames = response.entity._embedded.serviceInstances.map(serviceInstance => serviceInstance.name);
+
+			/**
+			 * Hold onto the list of known redis instances to support the selection widget.
+			 */
+			this.props.updateSetting(this.props.settings.redisInstances, redisInstanceNames)
+
+			/**
+			 * If the fetched list does NOT contain an already selected instance, update it
+			 */
+			if (redisInstanceNames.length > 0 && !this.currentRedisInstanceIsListed(redisInstanceNames)) {
+				this.props.updateSetting(this.props.settings.services, redisInstanceNames[0])
+			}
+		}, error => {
+			this.props.updateSetting(this.props.settings.redisInstances, [])
+			this.props.updateSetting(this.props.settings.services, '')
+		})
+	}
+
+	listRedisServices() {
+		return this.props.settings[this.props.settings.redisInstances]
+	}
+
+	currentRedisInstanceIsListed(redisInstanceNames) {
+		return redisInstanceNames.indexOf(this.props.settings[this.props.settings.services]) >= 0;
+	}
+
 	render() {
 		return (
 			<div>
 				<ul className="layout">
-					<TextInput label="Redis Service"
-							   placeHolder="Name of Redis service to bind to"
-							   name={this.props.settings.services}
-							   handleChange={this.handleChange}
-							   settings={this.props.settings} />
+					{ this.props.settings[this.props.settings.pickRedisFromDropdown] ?
+						<DropdownInput label="Redis Service"
+									   name={this.props.settings.services}
+									   handleChange={this.handleChange}
+									   loadData={this.loadRedisServices}
+									   data={this.listRedisServices}
+									   settings={this.props.settings} />
+						:
+						<TextInput label="Redis Service"
+									 placeHolder="Name of Redis service to bind to"
+									 name={this.props.settings.services}
+									 handleChange={this.handleChange}
+									 settings={this.props.settings}/>
+					}
+					{ this.props.settings[this.props.settings.pickRedisFromDropdown] ?
+						<li className='control-group'>
+							<label className='layout__item u-1/2-lap-and-up u-1/4-desk'></label>
+							<button className='layout__item u-1/2-lap-and-up u-3/4-desk'
+									name={this.props.settings.pickRedisFromDropdown}
+									onClick={this.toggleOff}>Text Entry</button>
+						</li>
+						:
+						<li className='control-group'>
+							<label className='layout__item u-1/2-lap-and-up u-1/4-desk'></label>
+							<button className='layout__item u-1/2-lap-and-up u-3/4-desk'
+									name={this.props.settings.pickRedisFromDropdown}
+									onClick={this.toggleOn}>Pick from a list</button>
+						</li>
+					}
 					<TextInput label="Default Org"
 							   placeHolder="Primary organization Spinnaker will deploy to"
 							   name="providers.cf.defaultOrg"

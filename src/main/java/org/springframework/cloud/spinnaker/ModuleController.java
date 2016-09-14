@@ -19,6 +19,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -44,16 +45,14 @@ public class ModuleController {
 
 	private static final Logger log = LoggerFactory.getLogger(ModuleController.class);
 
-	public static final String BASE_PATH = "/api";
-
 	private final ModuleService moduleService;
 
 	public ModuleController(ModuleService moduleService) {
 		this.moduleService = moduleService;
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = BASE_PATH + "/modules", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> statuses(@RequestParam("api") String api,
+	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/modules", produces = MediaTypes.HAL_JSON_VALUE)
+	public ResponseEntity<?> statuses(@RequestParam("api") URL api,
 									  @RequestParam("org") String org,
 									  @RequestParam("space") String space,
 									  @RequestParam("email") String email,
@@ -72,9 +71,9 @@ public class ModuleController {
 		));
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = BASE_PATH + "/modules/{module}", produces = MediaTypes.HAL_JSON_VALUE)
+	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/modules/{module}", produces = MediaTypes.HAL_JSON_VALUE)
 	public ResponseEntity<?> status(@PathVariable String module,
-									@RequestParam("api") String api,
+									@RequestParam("api") URL api,
 									@RequestParam("org") String org,
 									@RequestParam("space") String space,
 									@RequestParam("email") String email,
@@ -91,9 +90,9 @@ public class ModuleController {
 		));
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = BASE_PATH + "/modules/{module}")
+	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}")
 	public ResponseEntity<?> deploy(@PathVariable String module,
-									@RequestParam("api") String api,
+									@RequestParam("api") URL api,
 									@RequestParam("org") String org,
 									@RequestParam("space") String space,
 									@RequestParam("email") String email,
@@ -106,9 +105,9 @@ public class ModuleController {
 		return ResponseEntity.created(linkTo(methodOn(ModuleController.class).status(module, api, org, space, email, password, namespace)).toUri()).build();
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = BASE_PATH + "/modules/{module}/start")
+	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}/start")
 	public ResponseEntity<?> start(@PathVariable String module,
-								   @RequestParam("api") String api,
+								   @RequestParam("api") URL api,
 								   @RequestParam("org") String org,
 								   @RequestParam("space") String space,
 								   @RequestParam("email") String email,
@@ -119,9 +118,9 @@ public class ModuleController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = BASE_PATH + "/modules/{module}/stop")
+	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}/stop")
 	public ResponseEntity<?> stop(@PathVariable String module,
-								   @RequestParam("api") String api,
+								   @RequestParam("api") URL api,
 								   @RequestParam("org") String org,
 								   @RequestParam("space") String space,
 								   @RequestParam("email") String email,
@@ -132,9 +131,9 @@ public class ModuleController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@RequestMapping(method = RequestMethod.DELETE, value = BASE_PATH + "/modules/{module}")
+	@RequestMapping(method = RequestMethod.DELETE, value = ApiController.BASE_PATH + "/modules/{module}")
 	public ResponseEntity<?> undeploy(@PathVariable String module,
-									  @RequestParam("api") String api,
+									  @RequestParam("api") URL api,
 									  @RequestParam("org") String org,
 									  @RequestParam("space") String space,
 									  @RequestParam("email") String email,
