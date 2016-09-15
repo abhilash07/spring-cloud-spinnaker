@@ -18,6 +18,7 @@ class Application extends React.Component {
 			email: 'spinnaker.email',
 			password: 'spinnaker.password',
 			services: 'spring.cloud.deployer.cloudfoundry.services',
+			console: 'providers.cf.primaryCredentials.console',
 			accountName: 'cf.account.name',
 			accountPassword: 'cf.account.password',
 			repoUsername: 'cf.repo.username',
@@ -95,6 +96,13 @@ class Application extends React.Component {
 		}
 		if (key === this.state.primaryAccount) {
 			newState[this.state.primaryAccounts] = value
+		}
+
+		/**
+		 * If user enters API for PWS, then pre-load PWS's App Manager URL
+		 */
+		if (key === this.state.api && value === 'https://api.run.pivotal.io') {
+			newState[this.state.console] = 'https://console.run.pivotal.io'
 		}
 
 		/**

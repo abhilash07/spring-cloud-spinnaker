@@ -221,7 +221,7 @@ class Settings extends React.Component {
 						: null
 					}
 					{ this.props.settings[this.props.settings.travisEnabled] ?
-						<PasswordInput label="Travis GitHub Personal Access Token"
+						<PasswordInput label={["Travis ", <a href="https://github.com/settings/tokens" target="_blank">GitHub Personal Access Token</a>]}
 									   placeHolder="Travis GitHub Personal Access Token"
 									   name={this.props.settings.travisToken}
 									   handleChange={this.handleChange}
@@ -233,7 +233,7 @@ class Settings extends React.Component {
 								   handleChange={this.handleChange}
 								   settings={this.props.settings} />
 					{ this.props.settings[this.props.settings.slackEnabled] ?
-						<TextInput label="Slack Token (Use Bot not Webhook)"
+						<TextInput label={["Slack Token (Use ", <a href="https://my.slack.com/services/new/bot" target="_blank">Bot</a>, " not Webhook)"]}
 								   placeHolder="Bot token value (NOT Webhook token)"
 								   name={this.props.settings.slackToken}
 								   handleChange={this.handleChange}
