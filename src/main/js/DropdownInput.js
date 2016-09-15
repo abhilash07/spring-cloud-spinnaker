@@ -6,7 +6,9 @@ class DropdownInput extends React.Component {
 
 	constructor(props) {
 		super(props)
-		this.props.loadData()
+		if (this.props.loadData) {
+			this.props.loadData()
+		}
 	}
 
 	render() {

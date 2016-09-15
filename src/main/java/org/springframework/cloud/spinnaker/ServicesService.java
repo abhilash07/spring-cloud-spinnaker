@@ -17,12 +17,21 @@ package org.springframework.cloud.spinnaker;
 
 import java.net.URL;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.organizations.ListOrganizationsRequest;
+import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.cloudfoundry.util.PaginationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import org.springframework.stereotype.Service;
 
@@ -61,4 +70,33 @@ public class ServicesService {
 				.block(Duration.ofSeconds(60));
 	}
 
+	public Map<String, List<String>> getOrgs(String email, String password, URL apiEndpoint) {
+
+		CloudFoundryClient cloudFoundryClient = appDeployerFactory.getCloudFoundryClient(email, password, apiEndpoint);
+
+		List<Tuple2<String, String>> results =  PaginationUtils.requestClientV2Resources(page -> cloudFoundryClient
+			.organizations()
+				.list(ListOrganizationsRequest.builder()
+					.page(page)
+					.build()))
+				.flatMap(organizationResource -> PaginationUtils.requestClientV2Resources(page -> cloudFoundryClient
+					.spaces()
+						.list(ListSpacesRequest.builder()
+							.organizationId(organizationResource.getMetadata().getId())
+							.page(page)
+							.build()))
+						.map(spaceResource -> Tuples.of(organizationResource.getEntity().getName(), spaceResource.getEntity().getName())))
+				.collectList()
+				.block(Duration.ofSeconds(60));
+
+		Map<String, List<String>> combined = new HashMap<>();
+
+		results.stream()
+			.forEach(t -> {
+				combined.putIfAbsent(t.getT1(), new ArrayList<>());
+				combined.get(t.getT1()).add(t.getT2());
+			});
+
+		return combined;
+	}
 }
