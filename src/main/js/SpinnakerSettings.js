@@ -3,6 +3,7 @@
 const React = require('react')
 
 const DropdownInput = require('./DropdownInput')
+const Spinner = require('./Spinner')
 
 const client = require('./client')
 const follow = require('./follow')
@@ -32,6 +33,9 @@ class SpinnakerSettings extends React.Component {
 
 	refreshOrgsAndSpaces(e) {
 		e.preventDefault()
+
+		this.props.updateSetting('orgsAndSpacesLoading', true)
+
 		let api = this.props.settings[this.props.settings.api]
 		let email = this.props.settings[this.props.settings.email]
 		let password = this.props.settings[this.props.settings.password]
@@ -39,10 +43,9 @@ class SpinnakerSettings extends React.Component {
 		let root = '/api?api=' + api + '&email=' + email + '&password=' + password
 
 		follow(client, root, ['orgs']).done(response => {
+			this.props.updateSetting('orgsAndSpacesLoading', false)
 
 			let orgsAndSpaces = response.entity.content
-
-			console.log(orgsAndSpaces)
 
 			this.props.updateSetting(this.props.settings.orgsAndSpaces, orgsAndSpaces)
 
@@ -54,6 +57,8 @@ class SpinnakerSettings extends React.Component {
 				this.props.updateSetting(this.props.settings.space, firstSpace)
 			}
 		}, error => {
+			this.props.updateSetting('orgsAndSpacesLoading', false)
+
 			this.props.updateSetting(this.props.settings.orgsAndSpaces, {})
 			this.props.updateSetting(this.props.settings.org, '')
 			this.props.updateSetting(this.props.settings.space, '')
@@ -105,16 +110,22 @@ class SpinnakerSettings extends React.Component {
 						<button className='layout__item u-1/2-lap-and-up u-3/4-desk'
 								onClick={this.refreshOrgsAndSpaces}>Refresh</button>
 					</li>
-					<DropdownInput label="Target Organization"
-								   name={this.props.settings.org}
-								   handleChange={this.handleChange}
-								   data={this.listOrgs}
-								   settings={this.props.settings} />
-					<DropdownInput label="Target Space"
-								   name={this.props.settings.space}
-								   handleChange={this.handleChange}
-								   data={this.listSpaces}
-								   settings={this.props.settings} />
+					{ this.props.settings.orgsAndSpacesLoading ?
+						<Spinner />
+						:
+						<span>
+							<DropdownInput label="Target Organization"
+										   name={this.props.settings.org}
+										   handleChange={this.handleChange}
+										   data={this.listOrgs}
+										   settings={this.props.settings}/>
+							<DropdownInput label="Target Space"
+										   name={this.props.settings.space}
+										   handleChange={this.handleChange}
+										   data={this.listSpaces}
+										   settings={this.props.settings}/>
+						</span>
+					}
 					<li className={lineItemLayout}>
 						<label className={labelLayout}>Namespace</label>
 						<input className={inputLayout} type="text"

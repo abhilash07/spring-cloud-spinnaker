@@ -1,11 +1,13 @@
 'use strict'
 
 const React = require('react')
+
 const TextInput = require('./TextInput')
 const PasswordInput = require('./PasswordInput')
 const CheckboxInput = require('./CheckboxInput')
 const VariableInput = require('./VariableInput')
 const DropdownInput = require('./DropdownInput')
+const Spinner = require('./Spinner')
 
 const client = require('./client')
 const follow = require('./follow')
@@ -44,9 +46,13 @@ class Settings extends React.Component {
 	toggleOn(e) {
 		e.preventDefault()
 		this.props.updateSetting(e.target.name, true)
+		this.loadRedisServices()
 	}
 
 	loadRedisServices() {
+
+		this.props.updateSetting('redisLoading', true)
+
 		let api = this.props.settings[this.props.settings.api]
 		let org = this.props.settings[this.props.settings.org]
 		let space = this.props.settings[this.props.settings.space]
@@ -56,6 +62,8 @@ class Settings extends React.Component {
 		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
 
 		follow(client, root, [{rel: 'services', params: {serviceType: 'redis'}}]).done(response => {
+			this.props.updateSetting('redisLoading', false)
+
 			let redisInstanceNames = response.entity._embedded.serviceInstances.map(serviceInstance => serviceInstance.name);
 
 			/**
@@ -70,6 +78,8 @@ class Settings extends React.Component {
 				this.props.updateSetting(this.props.settings.services, redisInstanceNames[0])
 			}
 		}, error => {
+			this.props.updateSetting('redisLoading', false)
+
 			this.props.updateSetting(this.props.settings.redisInstances, [])
 			this.props.updateSetting(this.props.settings.services, '')
 		})
@@ -88,12 +98,15 @@ class Settings extends React.Component {
 			<div>
 				<ul className="layout">
 					{ this.props.settings[this.props.settings.pickRedisFromDropdown] ?
-						<DropdownInput label="Redis Service"
-									   name={this.props.settings.services}
-									   handleChange={this.handleChange}
-									   loadData={this.loadRedisServices}
-									   data={this.listRedisServices}
-									   settings={this.props.settings} />
+						this.props.settings.redisLoading ?
+							<Spinner />
+							:
+							<DropdownInput label="Redis Service"
+										   name={this.props.settings.services}
+										   handleChange={this.handleChange}
+										   //loadData={this.loadRedisServices}
+										   data={this.listRedisServices}
+										   settings={this.props.settings}/>
 						:
 						<TextInput label="Redis Service"
 									 placeHolder="Name of Redis service to bind to"

@@ -50,7 +50,9 @@ class Application extends React.Component {
 			redisInstances: 'redis.instances',
 			'redis.instances': [],
 			orgsAndSpaces: 'orgs.and.spaces',
-			'orgs.and.spaces': {}
+			'orgs.and.spaces': {},
+			redisLoading: false,
+			orgsAndSpacesLoading: false
 		}
 		this.removeEntry = this.removeEntry.bind(this)
 		this.updateSetting = this.updateSetting.bind(this)
