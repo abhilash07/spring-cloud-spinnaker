@@ -1,5 +1,5 @@
 {
-  "name": "Spring-Cloud-Spinnaker",
+  "name": "spring-cloud-spinnaker",
   "version": "1.0.0",
   "description": "Deploy Spinnaker to Cloud Foundry",
   "repository": {
