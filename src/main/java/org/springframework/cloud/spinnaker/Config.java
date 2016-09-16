@@ -17,6 +17,7 @@ package org.springframework.cloud.spinnaker;
 
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.spinnaker.filemanager.TempFileManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -34,13 +35,22 @@ public class Config {
 								CloudFoundryAppDeployerFactory appDeployerFactoryBean,
 								ApplicationContext ctx,
 								CounterService counterService,
-								TempFileManager fileManager) {
-		return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService, fileManager);
+								TempFileManager fileManager,
+								MavenProperties mavenProperties) {
+		return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, ctx, counterService, fileManager, mavenProperties);
 	}
 
 	@Bean
 	CloudFoundryAppDeployerFactory cloudFoundryAppDeployerFactoryBean() {
 		return new DefaultAppDeployerFactory();
+	}
+
+	@Bean
+	MavenProperties mavenProperties() {
+
+		MavenProperties properties = new MavenProperties();
+		properties.getRemoteRepositories().put("jcenter", new MavenProperties.RemoteRepository("http://jcenter.bintray.com/"));
+		return properties;
 	}
 
 }

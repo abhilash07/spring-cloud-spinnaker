@@ -7,7 +7,7 @@ spinnaker:
         spring.cloud.deployer.cloudfoundry.disk: 2048
         cf.asyncOperationTimeoutSecondsDefault: 1200 # 20 minutes
     - name: deck
-      artifact: deck-ui
+      artifact: com.netflix.spinnaker.deck:deck-ui:2.803.0
       properties:
         buildpack: staticfile_buildpack
     - name: echo

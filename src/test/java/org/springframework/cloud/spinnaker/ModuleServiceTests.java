@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
@@ -279,8 +280,9 @@ public class ModuleServiceTests {
 									CloudFoundryAppDeployerFactory appDeployerFactoryBean,
 									ApplicationContext ctx,
 									CounterService counterService,
-									TempFileManager fileManager) {
-			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, mockPatternResolver(ctx), counterService, fileManager);
+									TempFileManager fileManager,
+									MavenProperties mavenProperties) {
+			return new ModuleService(spinnakerConfiguration, appDeployerFactoryBean, mockPatternResolver(ctx), counterService, fileManager, mavenProperties);
 		}
 
 		@Bean
@@ -297,6 +299,11 @@ public class ModuleServiceTests {
 		@Bean
 		CounterService counterService() {
 			return mock(CounterService.class);
+		}
+
+		@Bean
+		MavenProperties mavenProperties() {
+			return mock(MavenProperties.class);
 		}
 
 	}

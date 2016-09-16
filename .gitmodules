@@ -23,7 +23,3 @@
 	path = igor
 	url = https://github.com/spinnaker/igor.git
 	ignore = dirty
-[submodule "deck"]
-	path = deck
-	url = https://github.com/spinnaker/deck.git
-	ignore = dirty

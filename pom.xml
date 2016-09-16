@@ -48,6 +48,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
+		<spring-cloud-deployer-spi.version>1.0.2.RELEASE</spring-cloud-deployer-spi.version>
 		<spring-cloud-deployer-cloudfoundry.version>1.0.0.RELEASE</spring-cloud-deployer-cloudfoundry.version>
 		<reactor.version>3.0.0.RELEASE</reactor.version>
 		<jackson.version>2.7.4</jackson.version>
@@ -86,6 +87,11 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-deployer-cloudfoundry</artifactId>
 			<version>${spring-cloud-deployer-cloudfoundry.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-deployer-resource-maven</artifactId>
+			<version>${spring-cloud-deployer-spi.version}</version>
 		</dependency>
 
 		<dependency>
@@ -186,11 +192,6 @@
 					<include>clouddriver-web/config/clouddriver.yml</include>
 				</includes>
 				<targetPath>spinnaker-modules</targetPath>
-			</resource>
-			<resource>
-				<directory>deck</directory>
-				<includes><include>build/libs/*.jar</include></includes>
-				<targetPath>spinnaker-modules/deck-ui</targetPath>
 			</resource>
 			<resource>
 				<directory>echo</directory>

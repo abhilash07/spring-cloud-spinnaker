@@ -17,18 +17,19 @@ package org.springframework.cloud.spinnaker;
 
 import static java.util.stream.Stream.*;
 import static org.cloudfoundry.util.DelayUtils.*;
+import static org.cloudfoundry.util.tuple.TupleUtils.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -37,6 +38,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -47,8 +49,11 @@ import org.cloudfoundry.operations.applications.StopApplicationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 import org.springframework.boot.actuate.metrics.CounterService;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
+import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.cloudfoundry.CloudFoundryAppDeployer;
@@ -90,17 +95,21 @@ public class ModuleService {
 
 	private final TempFileManager fileManager;
 
+	private final MavenProperties mavenProperties;
+
 	public ModuleService(SpinnakerConfiguration spinnakerConfiguration,
 						 CloudFoundryAppDeployerFactory appDeployerFactory,
 						 ResourcePatternResolver ctx,
 						 CounterService counterService,
-						 TempFileManager fileManager) {
+						 TempFileManager fileManager,
+						 MavenProperties mavenProperties) {
 
 		this.spinnakerConfiguration = spinnakerConfiguration;
 		this.appDeployerFactory = appDeployerFactory;
 		this.ctx = ctx;
 		this.counterService = counterService;
 		this.fileManager = fileManager;
+		this.mavenProperties = mavenProperties;
 	}
 
 	/**
@@ -283,10 +292,11 @@ public class ModuleService {
 								  ResourcePatternResolver ctx,
 								  Map<String, String> data) throws IOException {
 
-		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar";
-		final org.springframework.core.io.Resource[] resources = ctx.getResources(locationPattern);
-
-		ByteArrayResource streamedArtifact = Stream.of(resources)
+		if (details.getName().equals("deck")) {
+			return this.fileManager.createTempFile(details, findDeckMavenArtifact(details, data));
+		} else {
+			ByteArrayResource streamedArtifact = Stream.of(ctx.getResources(
+				"classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar"))
 				.findFirst()
 				.map(resource -> {
 					try {
@@ -296,13 +306,98 @@ public class ModuleService {
 					}
 					log.info("Need to also chew on " + data);
 
-					return (details.getName().equals("deck")
-							? pluginSettingsJs(resources[0], data)
-							: addConfigFile(details, resources[0], ctx));
+					return addConfigFile(details, resource, ctx);
 				})
 				.orElseThrow(() -> new RuntimeException("Unable to find artifact for " + details.getArtifact()));
 
-		return this.fileManager.createTempFile(details, streamedArtifact);
+			return this.fileManager.createTempFile(details, streamedArtifact);
+		}
+	}
+
+	/**
+	 * Pull deck from jcenter, unpack it, and insert a templated settings.js file based on user settings.
+	 *
+	 * @param details
+	 * @param data
+	 * @return
+	 */
+	private ByteArrayResource findDeckMavenArtifact(ModuleDetails details,
+										   Map<String, String> data) {
+
+		log.info("Fetching " + details.getArtifact() + " from the web...");
+		MavenResource mavenResource = MavenResource.parse(details.getArtifact(), this.mavenProperties);
+
+		ByteArrayOutputStream newDeck = new ByteArrayOutputStream();
+
+		try {
+			Manifest manifest = new Manifest();
+			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+
+			try (ZipFile deckInputFile = new ZipFile(mavenResource.getFile())) {
+				try (JarOutputStream deckOutputStream = new JarOutputStream(newDeck, manifest)) {
+
+					deckInputFile.stream()
+						.filter(e -> e.getName().startsWith("META-INF/resources/"))
+						.map(e -> {
+							JarEntry newEntry = new JarEntry(e.getName().substring("META-INF/resources/".length()));
+							newEntry.setTime(System.currentTimeMillis());
+							try {
+								return Tuples.of(deckInputFile.getInputStream(e), e.isDirectory(), newEntry);
+							} catch (IOException e1) {
+								throw new RuntimeException(e1);
+							}
+						})
+						.filter(predicate((entryStream, isDirectory, newEntry) -> !newEntry.getName().equals("")))
+						.map(function((entryStream, isDirectory, newEntry) -> {
+							if (newEntry.getName().equals("settings.js")) {
+								try {
+
+									String originalSettingsJs = StreamUtils.copyToString(entryStream, Charset.defaultCharset());
+
+									int start = originalSettingsJs.indexOf("'use strict'");
+									int end = originalSettingsJs.lastIndexOf("/* WEBPACK VAR INJECTION */");
+
+									String customSettingsJs = StreamUtils.copyToString(ctx.getResource("classpath:settings.js").getInputStream(), Charset.defaultCharset());
+
+									customSettingsJs = customSettingsJs.replace("{gate}", "https://gate" + data.getOrDefault("namespace", "") + "." + data.getOrDefault("deck.domain", DEFAULT_DOMAIN));
+									customSettingsJs = customSettingsJs.replace("{primaryAccount}", data.getOrDefault("deck.primaryAccount", DEFAULT_PRIMARY_ACCOUNT));
+									customSettingsJs = customSettingsJs.replace("{defaultOrg}", data.getOrDefault("providers.cf.defaultOrg", ""));
+									customSettingsJs = customSettingsJs.replace("'{primaryAccounts}'", "[" + StringUtils.collectionToCommaDelimitedString(
+										Arrays.stream(data.getOrDefault("deck.primaryAccounts", DEFAULT_PRIMARY_ACCOUNT).split(","))
+											.map(account -> "'" + account + "'")
+											.collect(Collectors.toList())) + "]");
+
+									InputStream modifiedStream = new ByteArrayInputStream((
+										originalSettingsJs.substring(0, start) +
+										customSettingsJs +
+										originalSettingsJs.substring(end)).getBytes());
+
+									return Tuples.of(modifiedStream, isDirectory, newEntry);
+								} catch (IOException e) {
+									throw new RuntimeException(e);
+								}
+							} else {
+								return Tuples.of(entryStream, isDirectory, newEntry);
+							}
+						}))
+						.forEach(consumer((entryStream, isDirectory, newEntry) -> {
+							try {
+								deckOutputStream.putNextEntry(newEntry);
+								if (!isDirectory) {
+									StreamUtils.copy(entryStream, deckOutputStream);
+								}
+								deckOutputStream.closeEntry();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}));
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return new ByteArrayResource(newDeck.toByteArray());
 	}
 
 	/**
@@ -355,17 +450,6 @@ public class ModuleService {
 			throw new RuntimeException(e);
 		}
 
-//		try {
-//			if (log.isDebugEnabled()) {
-//				Path file = Files.createTempFile(details.getName() + "-preview", ".jar");
-//				log.info("Dumping JAR contents to " + file);
-//				Files.write(file, newJarByteStream.toByteArray());
-//				file.toFile().deleteOnExit();
-//			}
-//		} catch (IOException e) {
-//			throw new RuntimeException(e);
-//		}
-
 		return new ByteArrayResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
 	}
 
@@ -409,69 +493,6 @@ public class ModuleService {
 			});
 	}
 
-
-	private ByteArrayResource pluginSettingsJs(Resource originalDeckJarFile, Map<String, String> data) {
-		try {
-			Manifest manifest = new Manifest();
-			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-			final ByteArrayOutputStream jarByteStream = new ByteArrayOutputStream();
-
-			try (
-					ZipInputStream inputJarStream = new ZipInputStream(originalDeckJarFile.getInputStream());
-					JarOutputStream newDeckJarFile = new JarOutputStream(jarByteStream, manifest)
-			) {
-				ZipEntry entry;
-				while ((entry = inputJarStream.getNextEntry()) != null) {
-					try {
-
-						if (entry.getName().contains("META-INF") || entry.getName().contains("MANIFEST.MF")) {
-							// Skip the manifest since it's set up above.
-						} else if (entry.getName().equals("settings.js")) {
-							transformSettingsJs(data, inputJarStream, newDeckJarFile, entry);
-						} else {
-							passThroughFileEntry(inputJarStream, newDeckJarFile, entry);
-						}
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				};
-			}
-
-//			if (log.isDebugEnabled()) {
-//				Path file = Files.createTempFile("deck-preview", ".jar");
-//				log.info("Dumping JAR contents to " + file);
-//				Files.write(file, jarByteStream.toByteArray());
-//				file.toFile().deleteOnExit();
-//			}
-
-			return new ByteArrayResource(jarByteStream.toByteArray(), "In memory JAR file for deck");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-
-	private static void transformSettingsJs(Map<String, String> data, ZipInputStream zipInputStream, JarOutputStream newDeckJarFile, ZipEntry entry) throws IOException {
-		JarEntry newEntry = new JarEntry(entry.getName());
-		newEntry.setTime(entry.getTime());
-		newDeckJarFile.putNextEntry(newEntry);
-		if (!entry.isDirectory()) {
-			String settingsJs = StreamUtils.copyToString(zipInputStream, Charset.defaultCharset());;
-			settingsJs = settingsJs.replace("{gate}", "https://gate" + data.getOrDefault("namespace", "") + "." + data.getOrDefault("deck.domain", DEFAULT_DOMAIN));
-			settingsJs = settingsJs.replace("{primaryAccount}", data.getOrDefault("deck.primaryAccount", DEFAULT_PRIMARY_ACCOUNT));
-			settingsJs = settingsJs.replace("{defaultOrg}", data.getOrDefault("providers.cf.defaultOrg", ""));
-			final String primaryAccounts = data.getOrDefault("deck.primaryAccounts", DEFAULT_PRIMARY_ACCOUNT);
-			final String[] primaryAccountsArray = primaryAccounts.split(",");
-			final List<String> accounts = Arrays.stream(primaryAccountsArray)
-					.map(account -> "'" + account + "'")
-					.collect(Collectors.toList());
-			final String formattedAccounts = StringUtils.collectionToCommaDelimitedString(accounts);
-			settingsJs = settingsJs.replace("'{primaryAccounts}'", "[" + formattedAccounts + "]");
-			StreamUtils.copy(settingsJs, Charset.defaultCharset(), newDeckJarFile);
-		}
-		newDeckJarFile.closeEntry();
-	}
-
 	private static void passThroughFileEntry(ZipInputStream zipInputStream, ZipOutputStream newJarFile, ZipEntry entry) throws IOException {
 		JarEntry newEntry = new JarEntry(entry);
 		newJarFile.putNextEntry(newEntry);
@@ -479,21 +500,6 @@ public class ModuleService {
 			StreamUtils.copy(zipInputStream, newJarFile);
 		}
 		newJarFile.closeEntry();
-	}
-
-	private static BiFunction<String, String, String> collectStates() {
-		return (totalState, instanceState) -> {
-			log.info("Total state = " + totalState + " Instance state = " + instanceState);
-			if ("RUNNING".equals(instanceState) || "RUNNING".equals(totalState)) {
-				return "RUNNING";
-			}
-
-			if ("FLAPPING".equals(instanceState) || "CRASHED".equals(instanceState)) {
-				return "FAILED";
-			}
-
-			return totalState;
-		};
 	}
 
 }

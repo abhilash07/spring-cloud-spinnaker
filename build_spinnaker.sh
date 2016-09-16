@@ -48,52 +48,11 @@ build() {
 
 }
 
-# Build deck
-buildDeck() {
-
-	BUILD_FAILED="yes"
-
-	/bin/mv $1/settings.js $1/settings.js.orig
-	/bin/cp settings.js $1/settings.js
-
-	push $1
-
-	pushd /tmp/$1
-
-	echo "+++ Backup up $1's .git/config"
-	cp .git/config .git/config.backup
-
-	echo "+++ Filtering out $1's worktree"
-	grep -v worktree .git/config > .git/config.new
-	mv .git/config.new .git/config
-
-	echo "+++ Building $1..."
-	./gradlew -DspringBoot.repackage=true clean build -x test && BUILD_FAILED="no"
-	/bin/rm -f build/libs/deck-ui-*.jar
-	jar cvf build/libs/deck-ui-repackaged.jar -C build/webpack/ .
-
-	echo "+++ Restoring $1's .git/config"
-	mv .git/config.backup .git/config
-
-	popd
-
-	pop $1
-
-	/bin/rm -f $1/settings.js
-	/bin/mv $1/settings.js.orig $1/settings.js
-
-    if [[ "${BUILD_FAILED}" == "yes" ]] ; then
-    	echo "--- FAILED to build $1"
-    	exit 1
-    fi
-
-}
-
-modules="clouddriver echo front50 gate igor orca deck"
+modules="clouddriver echo front50 gate igor orca"
 
 if [ "$1" = "" ]; then
 	echo
-	echo "Usage: ./build_spinnaker.sh [all|clouddriver|echo|front50|gate|igor|orca|deck]"
+	echo "Usage: ./build_spinnaker.sh [all|clouddriver|echo|front50|gate|igor|orca]"
 	echo
 	exit
 elif [ "$1" = "all" ]; then
@@ -103,11 +62,7 @@ elif [ "$1" = "all" ]; then
 	for module in $modules
 	do
 		echo "Building $module..."
-		if [ "$module" = "deck" ]; then
-			buildDeck $module
-		else
-			build $module
-		fi
+		build $module
 	done
 	exit
 elif [[ $modules =~ $1 ]]; then
