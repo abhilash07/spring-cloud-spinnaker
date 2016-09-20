@@ -52,12 +52,6 @@
 		<spring-cloud-deployer-cloudfoundry.version>1.0.0.RELEASE</spring-cloud-deployer-cloudfoundry.version>
 		<reactor.version>3.0.0.RELEASE</reactor.version>
 		<jackson.version>2.7.4</jackson.version>
-
-		<!-- Properties to build documentation -->
-		<docs.main>spring-cloud-spinnaker</docs.main>
-		<!-- Comma separated list of whitelisted branches -->
-		<docs.whitelisted.branches>master</docs.whitelisted.branches>
-		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
 
 	<dependencies>
@@ -237,125 +231,8 @@
 	</build>
 
 	<profiles>
-		<!--
-			Snapshots are automatically published via Jenkins.
-			See https://jenkins.spring.io/view/All/job/spring-cloud-spinnaker for more details.
-
-			To do a release (.RELEASE, .RC?, .M?):
-			1. Check in all changes and ensure there are no edited files.
-			2. Bump up version at the top suitably and commit change
-			3. git tag <version> (like v1.0.0.M1)
-			4. ./build_spinnaker.sh all
-			5. USERNAME=<user> PASSWORD=<password> mvn -Pmilestone deploy -s settings.xml
-			   or
-			   USERNAME=<user> PASSWORD=<password> mvn -Prelease deploy -s settings.xml
-			   or
-			   USERNAME=<user> PASSWORD=<password> mvn -Pcentral deploy -s settings.xml (for maven central)
-			6. git push
-			7. Inspect handiwork at https://repo.spring.io/ or https://oss.sonatype.org/#stagingRepositories
-		-->
 		<profile>
-			<id>milestone</id>
-
-			<properties>
-				<gpg.useagent>true</gpg.useagent>
-			</properties>
-
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>3.0.0</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar-no-fork</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
-						<executions>
-							<execution>
-								<id>sign-artifact</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-
-			<distributionManagement>
-				<repository>
-					<id>spring-milestones</id>
-					<name>repo.spring.io-milestones</name>
-					<url>https://repo.spring.io/libs-milestone-local</url>
-				</repository>
-			</distributionManagement>
-		</profile>
-
-		<profile>
-			<id>release</id>
-
-			<properties>
-				<gpg.useagent>true</gpg.useagent>
-			</properties>
-
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>3.0.0</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar-no-fork</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
-						<executions>
-							<execution>
-								<id>sign-artifact</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-
-			<distributionManagement>
-				<repository>
-					<id>spring-releases</id>
-					<name>repo.spring.io-releases</name>
-					<url>https://repo.spring.io/libs-release-local</url>
-				</repository>
-			</distributionManagement>
-		</profile>
-
-		<profile>
-			<id>central</id>
-
-			<properties>
-				<gpg.useagent>true</gpg.useagent>
-			</properties>
+			<id>distribute</id>
 
 			<build>
 				<plugins>
@@ -386,13 +263,26 @@
 							</execution>
 						</executions>
 					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>gpg</id>
+
+			<properties>
+				<gpg.useagent>true</gpg.useagent>
+			</properties>
+
+			<build>
+				<plugins>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
 						<version>1.6</version>
 						<executions>
 							<execution>
-								<id>sign-artifacts</id>
+								<id>sign-artifact</id>
 								<phase>verify</phase>
 								<goals>
 									<goal>sign</goal>
@@ -402,6 +292,116 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<profile>
+			<id>snapshot</id>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+						<version>2.6.1</version>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>build-info</id>
+								<goals>
+									<goal>publish</goal>
+								</goals>
+								<configuration>
+									<deployProperties>
+										<archives>*:*:*:*@zip zip.name:spring-cloud-spinnaker, zip.displayname:Spring Cloud Spinnaker, zip.deployed:false</archives>
+									</deployProperties>
+									<publisher>
+										<contextUrl>http://repo.spring.io</contextUrl>
+										<username>{{USERNAME}}</username>
+										<password>{{PASSWORD}}</password>
+										<repoKey>libs-snapshot-local</repoKey>
+										<snapshotRepoKey>libs-snapshot-local</snapshotRepoKey>
+									</publisher>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>milestone</id>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+						<version>2.6.1</version>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>build-info</id>
+								<goals>
+									<goal>publish</goal>
+								</goals>
+								<configuration>
+									<deployProperties>
+										<archives>*:*:*:*@zip zip.name:spring-cloud-spinnaker, zip.displayname:Spring Cloud Spinnaker, zip.deployed:false</archives>
+									</deployProperties>
+									<publisher>
+										<contextUrl>http://repo.spring.io</contextUrl>
+										<username>{{USERNAME}}</username>
+										<password>{{PASSWORD}}</password>
+										<repoKey>libs-milestone-local</repoKey>
+										<snapshotRepoKey>libs-snapshot-local</snapshotRepoKey>
+									</publisher>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>release</id>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+						<version>2.6.1</version>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>build-info</id>
+								<goals>
+									<goal>publish</goal>
+								</goals>
+								<configuration>
+									<deployProperties>
+										<archives>*:*:*:*@zip zip.name:spring-cloud-spinnaker, zip.displayname:Spring Cloud Spinnaker, zip.deployed:false</archives>
+									</deployProperties>
+									<publisher>
+										<contextUrl>http://repo.spring.io</contextUrl>
+										<username>{{USERNAME}}</username>
+										<password>{{PASSWORD}}</password>
+										<repoKey>libs-release-local</repoKey>
+										<snapshotRepoKey>libs-snapshot-local</snapshotRepoKey>
+									</publisher>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>central</id>
+
 			<distributionManagement>
 				<snapshotRepository>
 					<id>sonatype-nexus-snapshots</id>
@@ -435,6 +435,7 @@
 								<configuration>
 									<sourceDirectory>${basedir}/src/main/asciidoc</sourceDirectory>
 									<sourceDocumentName>index.adoc</sourceDocumentName>
+									<outputDirectory>${project.build.directory}/content/reference/htmlsingle</outputDirectory>
 									<backend>html</backend>
 									<doctype>book</doctype>
 									<attributes>
@@ -445,6 +446,84 @@
 										<spring-cloud-spinnaker-docs-version>${project.version}</spring-cloud-spinnaker-docs-version>
 										<github-tag>v${project.version}</github-tag>
 									</attributes>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<configuration>
+							<additionalparam>-Xdoclint:none</additionalparam>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<dependencies>
+							<dependency>
+								<groupId>ant-contrib</groupId>
+								<artifactId>ant-contrib</artifactId>
+								<version>1.0b3</version>
+								<exclusions>
+									<exclusion>
+										<groupId>ant</groupId>
+										<artifactId>ant</artifactId>
+									</exclusion>
+								</exclusions>
+							</dependency>
+							<dependency>
+								<groupId>org.apache.ant</groupId>
+								<artifactId>ant-nodeps</artifactId>
+								<version>1.8.1</version>
+							</dependency>
+							<dependency>
+								<groupId>org.tigris.antelope</groupId>
+								<artifactId>antelopetasks</artifactId>
+								<version>3.2.10</version>
+							</dependency>
+						</dependencies>
+						<executions>
+							<execution>
+								<id>package-and-attach-docs-zip</id>
+								<phase>package</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<zip destfile="${project.build.directory}/${project.artifactId}-${project.version}.zip">
+											<zipfileset src="${project.build.directory}/${project.artifactId}-${project.version}-javadoc.jar" prefix="api" />
+											<fileset dir="${project.build.directory}/content"/>
+										</zip>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-zip</id>
+								<goals>
+									<goal>attach-artifact</goal>
+								</goals>
+								<configuration>
+									<artifacts>
+										<artifact>
+											<file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+											<type>zip;zip.type=docs;zip.deployed=false</type>
+										</artifact>
+									</artifacts>
 								</configuration>
 							</execution>
 						</executions>
