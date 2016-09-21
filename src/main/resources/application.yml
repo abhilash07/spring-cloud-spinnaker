@@ -38,6 +38,7 @@ spinnaker:
 #      services:
 #        - spinnaker-redis
   properties:
+    okHttpClient.readTimeoutMs: 60000
 #    JBP_CONFIG_DEBUG: '{enabled: true}' # Reenable and then cf restage if you need to remotely debug
     providers.cf.enabled: true
     providers.cf.primaryCredentials.name: ${deck.primaryAccount}
