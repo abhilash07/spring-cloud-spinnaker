@@ -197,13 +197,13 @@ class Settings extends React.Component {
 								   name={this.props.settings.accountPassword}
 								   handleChange={this.handleChange}
 								   settings={this.props.settings} />
-					<TextInput label="Repository Name/Access Code"
-							   placeHolder="User/Access code to pull down artifacts"
+					<TextInput label="Repository Username (HTTP)/Access code (S3)"
+							   placeHolder="Username/Access code to pull down artifacts"
 							   name={this.props.settings.repoUsername}
 							   handleChange={this.handleChange}
 							   settings={this.props.settings} />
-					<PasswordInput label="Repository Password/Secret Code"
-								   placeHolder="Password/Secret code to pull down artifact"
+					<PasswordInput label="Repository Password (HTTP)/Secret Code (S3)"
+								   placeHolder="Password/Secret code to pull down artifacts"
 								   name={this.props.settings.repoPassword}
 								   handleChange={this.handleChange}
 								   settings={this.props.settings} />
