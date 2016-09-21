@@ -63,4 +63,16 @@ public class ServicesController {
 			linkTo(methodOn(ServicesController.class).listOrgs(apiEndpoint, email, password)).withSelfRel()));
 	}
 
+	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/domains", produces = MediaTypes.HAL_JSON_VALUE)
+	public ResponseEntity<?> listDomains(@RequestParam("api") URL apiEndpoint,
+										 @RequestParam("email") String email,
+										 @RequestParam("password") String password,
+										 @RequestParam("org") String org,
+										 @RequestParam("space") String space) {
+
+		return ResponseEntity.ok(new Resources<>(
+			this.servicesService.getDomains(email, password, apiEndpoint, org, space),
+			linkTo(methodOn(ServicesController.class).listDomains(apiEndpoint, email, password, org, space)).withSelfRel()));
+	}
+
 }

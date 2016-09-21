@@ -52,7 +52,11 @@ class Application extends React.Component {
 			orgsAndSpaces: 'orgs.and.spaces',
 			'orgs.and.spaces': {},
 			redisLoading: false,
-			orgsAndSpacesLoading: false
+			orgsAndSpacesLoading: false,
+			domains: 'domain.names',
+			'domain.names': [],
+			domainsLoading: false,
+
 		}
 		this.removeEntry = this.removeEntry.bind(this)
 		this.updateSetting = this.updateSetting.bind(this)

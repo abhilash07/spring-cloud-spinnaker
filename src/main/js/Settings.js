@@ -22,6 +22,8 @@ class Settings extends React.Component {
 		this.loadRedisServices = this.loadRedisServices.bind(this)
 		this.listRedisServices = this.listRedisServices.bind(this)
 		this.currentRedisInstanceIsListed = this.currentRedisInstanceIsListed.bind(this)
+		this.loadDomains = this.loadDomains.bind(this)
+		this.listDomains = this.listDomains.bind(this)
 	}
 
 	/**
@@ -93,6 +95,43 @@ class Settings extends React.Component {
 		return redisInstanceNames.indexOf(this.props.settings[this.props.settings.services]) >= 0;
 	}
 
+	loadDomains(e) {
+		e.preventDefault()
+		this.props.updateSetting('domainsLoading', true)
+
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+
+		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
+
+		follow(client, root, ['domains']).done(response => {
+			this.props.updateSetting('domainsLoading', false)
+
+			let domainNames = response.entity._embedded.domains.map(domain => domain.name);
+
+			/**
+			 * Hold onto the list of known domains to support the selection widget.
+			 */
+			this.props.updateSetting(this.props.settings.domains, domainNames)
+
+			if (domainNames.length > 0) {
+				this.props.updateSetting(this.props.settings.domain, domainNames[0])
+			}
+		}, error => {
+			this.props.updateSetting('domainsLoading', false)
+
+			this.props.updateSetting(this.props.settings.domains, [])
+			this.props.updateSetting(this.props.settings.domain, '')
+		})
+	}
+
+	listDomains() {
+		return this.props.settings[this.props.settings.domains]
+	}
+
 	render() {
 		return (
 			<div>
@@ -104,7 +143,6 @@ class Settings extends React.Component {
 							<DropdownInput label="Redis Service"
 										   name={this.props.settings.services}
 										   handleChange={this.handleChange}
-										   //loadData={this.loadRedisServices}
 										   data={this.listRedisServices}
 										   settings={this.props.settings}/>
 						:
@@ -305,16 +343,20 @@ class Settings extends React.Component {
 							settings={this.props.settings} />
 						: null
 					}
-					<TextInput label="Spring Config Location override"
-							   placeHolder="List of property file URL overrides for Spinnaker"
-							   name='spring.config.location'
-							   handleChange={this.handleChange}
-							   settings={this.props.settings} />
-					<TextInput label="Domain"
-							   placeHolder="Domain of Spinnaker and deployments, e.g. cfapps.io"
-							   name='deck.domain'
-							   handleChange={this.handleChange}
-							   settings={this.props.settings} />
+					<li className='control-group'>
+						<label className='layout__item u-1/2-lap-and-up u-1/4-desk'></label>
+						<button className='layout__item u-1/2-lap-and-up u-3/4-desk'
+								onClick={this.loadDomains}>Refresh list of domains</button>
+					</li>
+					{this.props.settings.domainsLoading ?
+						<Spinner />
+						:
+						<DropdownInput label="Domain"
+									   name={this.props.settings.domain}
+									   handleChange={this.handleChange}
+									   data={this.listDomains}
+									   settings={this.props.settings}/>
+					}
 					<TextInput label="Primary Account Name"
 							   placeHolder="Name of the primary account (e.g. prod)"
 							   name='deck.primaryAccount'

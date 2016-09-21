@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationsRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
+import org.cloudfoundry.operations.domains.Domain;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.util.PaginationUtils;
 import org.slf4j.Logger;
@@ -98,5 +99,14 @@ public class ServicesService {
 			});
 
 		return combined;
+	}
+
+	public List<Domain> getDomains(String email, String password, URL apiEndpoint, String org, String space) {
+
+		return appDeployerFactory.getOperations(email, password, apiEndpoint, org, space)
+			.domains()
+				.list()
+				.collectList()
+				.block(Duration.ofSeconds(60));
 	}
 }

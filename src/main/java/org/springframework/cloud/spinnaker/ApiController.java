@@ -49,6 +49,7 @@ public class ApiController {
 		root.add(linkTo(methodOn(ModuleController.class).statuses(api, org, space, email, password, namespace)).withRel("modules"));
 		root.add(linkTo(methodOn(ServicesController.class).listServices(null, api, org, space, email, password)).withRel("services"));
 		root.add(linkTo(methodOn(ServicesController.class).listOrgs(api, email, password)).withRel("orgs"));
+		root.add(linkTo(methodOn(ServicesController.class).listDomains(api, email, password, org, space)).withRel("domains"));
 
 		return ResponseEntity.ok(root);
 	}
