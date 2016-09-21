@@ -2,6 +2,7 @@
 
 const React = require('react')
 
+const TextInput = require('./TextInput')
 const DropdownInput = require('./DropdownInput')
 const Spinner = require('./Spinner')
 
@@ -15,6 +16,7 @@ class SpinnakerSettings extends React.Component {
 		super(props)
 		this.state = {}
 		this.handleChange = this.handleChange.bind(this)
+		this.pws = this.pws.bind(this)
 		this.refreshOrgsAndSpaces = this.refreshOrgsAndSpaces.bind(this)
 		this.listOrgs = this.listOrgs.bind(this)
 		this.listSpaces = this.listSpaces.bind(this)
@@ -29,6 +31,11 @@ class SpinnakerSettings extends React.Component {
 			let firstSpace = this.props.settings[this.props.settings.orgsAndSpaces][e.target.value][0]
 			this.props.updateSetting(this.props.settings.space, firstSpace)
 		}
+	}
+
+	pws(e) {
+		e.preventDefault()
+		this.props.updateSetting(this.props.settings.api, 'https://api.run.pivotal.io')
 	}
 
 	refreshOrgsAndSpaces(e) {
@@ -78,33 +85,29 @@ class SpinnakerSettings extends React.Component {
 	}
 
 	render() {
-		let labelLayout = 'layout__item u-1/2-lap-and-up u-1/4-desk'
-		let inputLayout = 'layout__item u-1/2-lap-and-up u-3/4-desk'
-		let lineItemLayout = 'control-group'
+
+		let pwsButton = <button className="layout__item u-1/16-lap-and-up u-1/16-desk" onClick={this.pws}>PWS</button>
+
 		return (
 			<div>
 				<ul className="layout">
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Target API</label>
-						<input className={inputLayout} type="text"
-							   name="spinnaker.api"
-							   placeholder="API to install Spinnaker, e.g. https://api.run.pivotal.io"
-							   onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Target Email</label>
-						<input className={inputLayout} type="text"
-							   name="spinnaker.email"
-							   placeholder="Login email to install Spinnaker"
-							   onChange={this.handleChange} />
-					</li>
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Target Password</label>
-						<input className={inputLayout} type="password"
-							   name="spinnaker.password"
-							   placeholder="Password to install Spinnaker"
-							   onChange={this.handleChange} />
-					</li>
+					<TextInput label="Target API"
+							   placeHolder="API to install Spinnaker, e.g. https://api.run.pivotal.io"
+							   name={this.props.settings.api}
+							   handleChange={this.handleChange}
+							   optional={pwsButton}
+							   inputLayout="layout__item u-7/16-lap-and-up u-11/16-desk"
+							   settings={this.props.settings} />
+					<TextInput label="Target Email"
+							   placeHolder="Login email to install Spinnaker"
+							   name={this.props.settings.email}
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
+					<TextInput label="Target Password"
+							   placeHolder="Password to install Spinnaker"
+							   name={this.props.settings.password}
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
 					<li className='control-group'>
 						<label className='layout__item u-1/2-lap-and-up u-1/4-desk'></label>
 						<button className='layout__item u-1/2-lap-and-up u-3/4-desk'
@@ -126,12 +129,11 @@ class SpinnakerSettings extends React.Component {
 										   settings={this.props.settings}/>
 						</span>
 					}
-					<li className={lineItemLayout}>
-						<label className={labelLayout}>Namespace</label>
-						<input className={inputLayout} type="text"
-							   placeholder="Logical name for each module of Spinnaker (e.g. alice)"
-							   name="all.namespace" onChange={this.handleChange} />
-					</li>
+					<TextInput label="Namespace"
+							   placeHolder="Logical name for each module of Spinnaker (e.g. alice)"
+							   name="all.namespace"
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
 				</ul>
 			</div>
 		)
