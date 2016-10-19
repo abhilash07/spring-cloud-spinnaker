@@ -145,14 +145,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("echo");
-		given(appDeployer.status("echo")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("igor");
+		given(appDeployer.status("igor")).willReturn(
 				AppStatus
-						.of("echo")
+						.of("igor")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("echo")
+												.name("igor")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -173,15 +173,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "");
+		moduleService.deploy("igor", data, new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("echo", Collections.emptyMap()),
+				new AppDefinition("igor", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("echo");
+		then(appDeployer).should().status("igor");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -194,14 +194,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("clouddriver-namespace");
-		given(appDeployer.status("clouddriver-namespace")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("igor-namespace");
+		given(appDeployer.status("igor-namespace")).willReturn(
 				AppStatus
-						.of("clouddriver-namespace")
+						.of("igor-namespace")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("clouddriver-namespace")
+												.name("igor-namespace")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -222,15 +222,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
+		moduleService.deploy("igor", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("echo-namespace", Collections.emptyMap()),
+				new AppDefinition("igor-namespace", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("clouddriver-namespace");
+		then(appDeployer).should().status("igor-namespace");
 		verifyNoMoreInteractions(appDeployer);
 	}
 

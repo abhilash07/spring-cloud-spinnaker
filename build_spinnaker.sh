@@ -48,11 +48,11 @@ build() {
 
 }
 
-modules="front50 gate igor orca"
+modules="gate igor orca"
 
 if [ "$1" = "" ]; then
 	echo
-	echo "Usage: ./build_spinnaker.sh [all|front50|gate|igor|orca]"
+	echo "Usage: ./build_spinnaker.sh [all|gate|igor|orca]"
 	echo
 	exit
 elif [ "$1" = "all" ]; then

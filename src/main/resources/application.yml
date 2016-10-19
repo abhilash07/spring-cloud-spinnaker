@@ -16,7 +16,7 @@ spinnaker:
         front50.baseUrl: ${services.front50.baseUrl}
         orca.baseUrl: ${services.orca.baseUrl}
     - name: front50
-      artifact: front50-web
+      artifact: org.springframework.cloud:front50-app:1.0.0.BUILD-SNAPSHOT
     - name: gate
       artifact: gate-web
     - name: igor
