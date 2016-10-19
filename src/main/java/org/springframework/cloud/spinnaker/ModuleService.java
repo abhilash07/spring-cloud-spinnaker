@@ -166,6 +166,12 @@ public class ModuleService {
 		Optional.ofNullable(details.getProperties().get("buildpack"))
 				.ifPresent(buildpack -> deploymentProperties.put(CloudFoundryDeploymentProperties.BUILDPACK_PROPERTY_KEY, buildpack));
 
+		Optional.ofNullable(details.getProperties().get("memory"))
+			.ifPresent(memory -> deploymentProperties.put(CloudFoundryDeploymentProperties.MEMORY_PROPERTY_KEY, memory));
+
+		Optional.ofNullable(details.getProperties().get("disk"))
+			.ifPresent(disk -> deploymentProperties.put(CloudFoundryDeploymentProperties.DISK_PROPERTY_KEY, disk));
+
 		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace);
 
 		log.debug("Uploading " + artifactToDeploy + "...");

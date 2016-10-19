@@ -3,8 +3,8 @@ spinnaker:
     - name: clouddriver
       artifact: org.springframework.cloud:clouddriver-app:1.0.0.BUILD-SNAPSHOT
       properties:
-        spring.cloud.deployer.cloudfoundry.memory: 4096
-        spring.cloud.deployer.cloudfoundry.disk: 2048
+        memory: 4096
+        disk: 2048
         cf.asyncOperationTimeoutSecondsDefault: 1200 # 20 minutes
     - name: deck
       artifact: com.netflix.spinnaker.deck:deck-ui:2.803.0
