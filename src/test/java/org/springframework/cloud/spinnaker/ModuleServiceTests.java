@@ -15,12 +15,10 @@
  */
 package org.springframework.cloud.spinnaker;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.rules.ExpectedException.none;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.junit.rules.ExpectedException.*;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -42,6 +40,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.CounterService;
@@ -61,8 +60,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Greg Turnquist
@@ -148,14 +145,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("clouddriver");
-		given(appDeployer.status("clouddriver")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("echo");
+		given(appDeployer.status("echo")).willReturn(
 				AppStatus
-						.of("clouddriver")
+						.of("echo")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("clouddriver")
+												.name("echo")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -176,15 +173,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("clouddriver", data, new URL("http://example.com"), "org", "space", "user", "password", "");
+		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("clouddriver", Collections.emptyMap()),
+				new AppDefinition("echo", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("clouddriver");
+		then(appDeployer).should().status("echo");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -225,11 +222,11 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("clouddriver", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
+		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("clouddriver-namespace", Collections.emptyMap()),
+				new AppDefinition("echo-namespace", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
