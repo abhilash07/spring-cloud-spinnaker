@@ -145,14 +145,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("igor");
-		given(appDeployer.status("igor")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("orca");
+		given(appDeployer.status("orca")).willReturn(
 				AppStatus
-						.of("igor")
+						.of("orca")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("igor")
+												.name("orca")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -173,15 +173,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("igor", data, new URL("http://example.com"), "org", "space", "user", "password", "");
+		moduleService.deploy("orca", data, new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("igor", Collections.emptyMap()),
+				new AppDefinition("orca", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("igor");
+		then(appDeployer).should().status("orca");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -194,14 +194,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("igor-namespace");
-		given(appDeployer.status("igor-namespace")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("orca-namespace");
+		given(appDeployer.status("orca-namespace")).willReturn(
 				AppStatus
-						.of("igor-namespace")
+						.of("orca-namespace")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("igor-namespace")
+												.name("orca-namespace")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -222,15 +222,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("igor", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
+		moduleService.deploy("orca", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("igor-namespace", Collections.emptyMap()),
+				new AppDefinition("orca-namespace", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("igor-namespace");
+		then(appDeployer).should().status("orca-namespace");
 		verifyNoMoreInteractions(appDeployer);
 	}
 

@@ -2,7 +2,3 @@
 	path = orca
 	url = https://github.com/spinnaker/orca.git
 	ignore = dirty
-[submodule "igor"]
-	path = igor
-	url = https://github.com/spinnaker/igor.git
-	ignore = dirty

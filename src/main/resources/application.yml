@@ -20,7 +20,7 @@ spinnaker:
     - name: gate
       artifact: org.springframework.cloud:gate-app:1.0.0.BUILD-SNAPSHOT
     - name: igor
-      artifact: igor-web
+      artifact: org.springframework.cloud:igor-app:1.0.0.BUILD-SNAPSHOT
       properties:
         spring.profiles.active: jenkins,travis
     - name: orca
