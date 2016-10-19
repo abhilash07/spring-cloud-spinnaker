@@ -3,6 +3,7 @@
 const React = require('react')
 
 const TextInput = require('./TextInput')
+const PasswordInput = require('./PasswordInput')
 const DropdownInput = require('./DropdownInput')
 const Spinner = require('./Spinner')
 
@@ -103,7 +104,7 @@ class SpinnakerSettings extends React.Component {
 							   name={this.props.settings.email}
 							   handleChange={this.handleChange}
 							   settings={this.props.settings} />
-					<TextInput label="Target Password"
+					<PasswordInput label="Target Password"
 							   placeHolder="Password to install Spinnaker"
 							   name={this.props.settings.password}
 							   handleChange={this.handleChange}
