@@ -2,10 +2,6 @@
 	path = front50
 	url = https://github.com/spinnaker/front50.git
 	ignore = dirty
-[submodule "echo"]
-	path = echo
-	url = https://github.com/spinnaker/echo.git
-	ignore = dirty
 [submodule "gate"]
 	path = gate
 	url = https://github.com/spinnaker/gate.git

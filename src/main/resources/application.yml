@@ -11,7 +11,7 @@ spinnaker:
       properties:
         buildpack: staticfile_buildpack
     - name: echo
-      artifact: echo-web
+      artifact: org.springframework.cloud:echo-app:1.0.0.BUILD-SNAPSHOT
       properties:
         front50.baseUrl: ${services.front50.baseUrl}
         orca.baseUrl: ${services.orca.baseUrl}
