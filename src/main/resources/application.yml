@@ -1,7 +1,7 @@
 spinnaker:
   modules:
     - name: clouddriver
-      artifact: clouddriver-web
+      artifact: org.springframework.cloud:clouddriver-app:1.0.0.BUILD-SNAPSHOT
       properties:
         spring.cloud.deployer.cloudfoundry.memory: 4096
         spring.cloud.deployer.cloudfoundry.disk: 2048

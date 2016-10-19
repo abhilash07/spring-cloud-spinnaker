@@ -180,7 +180,7 @@ public class ModuleService {
 				.filter(appStatus ->
 					appStatus.getState() == DeploymentState.deployed || appStatus.getState() == DeploymentState.deploying)
 				.repeatWhenEmpty(exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), Duration.ofMinutes(15)))
-				.block(Duration.ofMinutes(10));
+				.block(Duration.ofMinutes(20));
 		} finally {
 			this.fileManager.delete(details);
 		}
@@ -294,6 +294,8 @@ public class ModuleService {
 
 		if (details.getName().equals("deck")) {
 			return this.fileManager.createTempFile(details, findDeckMavenArtifact(details, data));
+		} else if (details.getName().equals("clouddriver")) {
+			return this.fileManager.createTempFile(details, findMavenArtifact(details));
 		} else {
 			ByteArrayResource streamedArtifact = Stream.of(ctx.getResources(
 				"classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar"))
@@ -315,7 +317,7 @@ public class ModuleService {
 	}
 
 	/**
-	 * Pull deck from jcenter, unpack it, and insert a templated settings.js file based on user settings.
+	 * Pull deck, unpack it, and insert a templated settings.js file based on user settings.
 	 *
 	 * @param details
 	 * @param data
@@ -398,6 +400,30 @@ public class ModuleService {
 		}
 
 		return new ByteArrayResource(newDeck.toByteArray());
+	}
+
+	/**
+	 * Fetch an artifact from one of the maven repositories listed in the properties.
+	 * Convert it into a {@link ByteArrayResource}.
+	 *
+	 * @param details
+	 * @return
+	 */
+	private ByteArrayResource findMavenArtifact(ModuleDetails details) {
+
+		log.info("Fetching " + details.getArtifact() + " from the web...");
+		MavenResource mavenResource = MavenResource.parse(details.getArtifact(), this.mavenProperties);
+
+		ByteArrayOutputStream downloadedArtifact = new ByteArrayOutputStream();
+
+		try {
+			StreamUtils.copy(mavenResource.getInputStream(), downloadedArtifact);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		return new ByteArrayResource(downloadedArtifact.toByteArray());
+
 	}
 
 	/**

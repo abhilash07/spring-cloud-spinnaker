@@ -50,6 +50,9 @@ public class Config {
 
 		MavenProperties properties = new MavenProperties();
 		properties.getRemoteRepositories().put("jcenter", new MavenProperties.RemoteRepository("http://jcenter.bintray.com/"));
+		properties.getRemoteRepositories().put("spring-snapshots", new MavenProperties.RemoteRepository("http://repo.spring.io/snapshot"));
+		properties.getRemoteRepositories().put("spring-milestones", new MavenProperties.RemoteRepository("http://repo.spring.io/milestone"));
+		properties.getRemoteRepositories().put("spring-releases", new MavenProperties.RemoteRepository("http://repo.spring.io/release"));
 		return properties;
 	}
 
