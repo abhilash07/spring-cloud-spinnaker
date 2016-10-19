@@ -18,7 +18,7 @@ spinnaker:
     - name: front50
       artifact: org.springframework.cloud:front50-app:1.0.0.BUILD-SNAPSHOT
     - name: gate
-      artifact: gate-web
+      artifact: org.springframework.cloud:gate-app:1.0.0.BUILD-SNAPSHOT
     - name: igor
       artifact: igor-web
       properties:

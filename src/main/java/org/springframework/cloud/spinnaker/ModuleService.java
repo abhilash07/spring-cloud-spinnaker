@@ -300,7 +300,7 @@ public class ModuleService {
 
 		if (details.getName().equals("deck")) {
 			return this.fileManager.createTempFile(details, findDeckMavenArtifact(details, data));
-		} else if (Arrays.asList("clouddriver", "echo", "front50").contains(details.getName())) {
+		} else if (Arrays.asList("clouddriver", "echo", "front50", "gate").contains(details.getName())) {
 			return this.fileManager.createTempFile(details, findMavenArtifact(details));
 		} else {
 			ByteArrayResource streamedArtifact = Stream.of(ctx.getResources(
