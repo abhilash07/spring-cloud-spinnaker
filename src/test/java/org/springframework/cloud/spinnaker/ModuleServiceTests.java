@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,6 +74,9 @@ public class ModuleServiceTests {
 
 	@Autowired
 	ModuleService moduleService;
+
+	@Autowired
+	MavenProperties mavenProperties;
 
 	@Rule public ExpectedException thrown = none();
 
@@ -145,14 +149,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("orca");
-		given(appDeployer.status("orca")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("echo");
+		given(appDeployer.status("echo")).willReturn(
 				AppStatus
-						.of("orca")
+						.of("echo")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("orca")
+												.name("echo")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -173,15 +177,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("orca", data, new URL("http://example.com"), "org", "space", "user", "password", "");
+		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("orca", Collections.emptyMap()),
+				new AppDefinition("echo", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("orca");
+		then(appDeployer).should().status("echo");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -194,14 +198,14 @@ public class ModuleServiceTests {
 		appDeployerFactory.setStub(appDeployer);
 		appDeployerFactory.setStubClient(client);
 
-		given(appDeployer.deploy(any())).willReturn("orca-namespace");
-		given(appDeployer.status("orca-namespace")).willReturn(
+		given(appDeployer.deploy(any())).willReturn("echo-namespace");
+		given(appDeployer.status("echo-namespace")).willReturn(
 				AppStatus
-						.of("orca-namespace")
+						.of("echo-namespace")
 						.with(
 								new CloudFoundryAppInstanceStatus(
 										ApplicationDetail.builder()
-												.name("orca-namespace")
+												.name("echo-namespace")
 												.id("abcdef")
 												.stack("")
 												.diskQuota(1024)
@@ -222,15 +226,15 @@ public class ModuleServiceTests {
 		data.put("foo", "bar");
 
 		// when
-		moduleService.deploy("orca", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
+		moduleService.deploy("echo", data, new URL("http://example.com"), "org", "space", "user", "password", "namespace");
 
 		// then
 		then(appDeployer).should().deploy(new AppDeploymentRequest(
-				new AppDefinition("orca-namespace", Collections.emptyMap()),
+				new AppDefinition("echo-namespace", Collections.emptyMap()),
 				artifactToUpload,
 				any()
 		));
-		then(appDeployer).should().status("orca-namespace");
+		then(appDeployer).should().status("echo-namespace");
 		verifyNoMoreInteractions(appDeployer);
 	}
 
@@ -299,8 +303,14 @@ public class ModuleServiceTests {
 		}
 
 		@Bean
-		MavenProperties mavenProperties() {
-			return mock(MavenProperties.class);
+		MavenProperties mavenProperties() throws IOException {
+
+			MavenProperties properties = new MavenProperties();
+			properties.setLocalRepository(Files.createTempDirectory("spring-cloud-spinnaker-tests-").toString());
+			properties.getRemoteRepositories().put("spring-snapshots", new MavenProperties.RemoteRepository("http://repo.spring.io/snapshot"));
+//			properties.getRemoteRepositories().put("spring-milestones", new MavenProperties.RemoteRepository("http://repo.spring.io/milestone"));
+//			properties.getRemoteRepositories().put("spring-releases", new MavenProperties.RemoteRepository("http://repo.spring.io/release"));
+			return properties;
 		}
 
 	}

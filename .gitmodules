@@ -1,4 +1,0 @@
-[submodule "orca"]
-	path = orca
-	url = https://github.com/spinnaker/orca.git
-	ignore = dirty

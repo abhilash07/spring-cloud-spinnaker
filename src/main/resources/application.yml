@@ -24,7 +24,7 @@ spinnaker:
       properties:
         spring.profiles.active: jenkins,travis
     - name: orca
-      artifact: orca-web
+      artifact: org.springframework.cloud:orca-app:1.0.0.BUILD-SNAPSHOT
       properties:
         bakery.baseUrl: ${services.default.protocol}://localhost:8087  # We don't use the bakery, but this prop must be set
         echo.enabled: ${services.echo.enabled}
