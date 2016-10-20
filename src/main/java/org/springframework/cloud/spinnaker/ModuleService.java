@@ -37,10 +37,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest;
@@ -290,35 +287,33 @@ public class ModuleService {
 				.orElseThrow(handleNonExistentModule(module));
 	}
 
+	/**
+	 * Wrap an illegal module inside an exception.
+	 *
+	 * @param module
+	 * @return
+	 */
 	private static Supplier<IllegalArgumentException> handleNonExistentModule(String module) {
 		return () -> new IllegalArgumentException("Module '" + module + "' is not managed by this system");
 	}
 
+	/**
+	 * Fetch an artifact from Maven.
+	 *
+	 * @param details
+	 * @param ctx
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 */
 	private Resource findArtifact(ModuleDetails details,
 								  ResourcePatternResolver ctx,
 								  Map<String, String> data) throws IOException {
 
 		if (details.getName().equals("deck")) {
 			return this.fileManager.createTempFile(details, findDeckMavenArtifact(details, data));
-		} else if (Arrays.asList("clouddriver", "echo", "front50", "gate", "igor", "orca").contains(details.getName())) {
-			return this.fileManager.createTempFile(details, findMavenArtifact(details));
 		} else {
-			ByteArrayResource streamedArtifact = Stream.of(ctx.getResources(
-				"classpath*:**/" + details.getArtifact() + "/**/" + details.getArtifact() + "-*.jar"))
-				.findFirst()
-				.map(resource -> {
-					try {
-						log.info("Deploying " + resource.getFilename() + " found at " + resource.getURI().toString());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					log.info("Need to also chew on " + data);
-
-					return addConfigFile(details, resource, ctx);
-				})
-				.orElseThrow(() -> new RuntimeException("Unable to find artifact for " + details.getArtifact()));
-
-			return this.fileManager.createTempFile(details, streamedArtifact);
+			return this.fileManager.createTempFile(details, findMavenArtifact(details, ctx));
 		}
 	}
 
@@ -396,13 +391,13 @@ public class ModuleService {
 								}
 								deckOutputStream.closeEntry();
 							} catch (IOException e) {
-								e.printStackTrace();
+								throw new RuntimeException(e);
 							}
 						}));
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 
 		return new ByteArrayResource(newDeck.toByteArray());
@@ -410,12 +405,15 @@ public class ModuleService {
 
 	/**
 	 * Fetch an artifact from one of the maven repositories listed in the properties.
+	 * Add any local {name}-*.yml files.
 	 * Convert it into a {@link ByteArrayResource}.
+	 *
+	 * TODO: Remove adding local {name}-*.yml files when SPRING_APPLICATION_JSON support can be used.
 	 *
 	 * @param details
 	 * @return
 	 */
-	private ByteArrayResource findMavenArtifact(ModuleDetails details) {
+	private ByteArrayResource findMavenArtifact(ModuleDetails details, ResourcePatternResolver ctx) {
 
 		log.info("Fetching " + details.getArtifact() + " from the web...");
 		MavenResource mavenResource = MavenResource.parse(details.getArtifact(), this.mavenProperties);
@@ -423,13 +421,34 @@ public class ModuleService {
 		ByteArrayOutputStream downloadedArtifact = new ByteArrayOutputStream();
 
 		try {
-			StreamUtils.copy(mavenResource.getInputStream(), downloadedArtifact);
+			try (ZipFile artifactInputFile = new ZipFile(mavenResource.getFile())) {
+				try (JarOutputStream artifactOutputStream = new JarOutputStream(downloadedArtifact)) {
+
+					artifactInputFile.stream()
+						.forEach(e -> {
+							try {
+								artifactOutputStream.putNextEntry(e);
+								if (!e.isDirectory()) {
+									StreamUtils.copy(artifactInputFile.getInputStream(e), artifactOutputStream);
+								}
+								artifactOutputStream.closeEntry();
+
+								// If we have just copied the module's yml file, add any other module-specific ones.
+								if (e.getName().equals(details.getName() + ".yml")) {
+									insertExtraConfigFiles(details, ctx, artifactOutputStream);
+								}
+							} catch (IOException e1) {
+								throw new RuntimeException(e1);
+							}
+						});
+
+				}
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 
 		return new ByteArrayResource(downloadedArtifact.toByteArray());
-
 	}
 
 	/**
@@ -456,57 +475,16 @@ public class ModuleService {
 	}
 
 	/**
-	 * While copying in a module's JAR, add it's related application.yml file
+	 * Insert module-specific overrides to support customizations that can't be set via env variables.
+	 *
+	 * TODO: Remove this and replace with SPRING_APPLICATION_JSON when module moved to Spring Boot 1.4
 	 *
 	 * @param details
-	 * @param resource
-	 * @return
+	 * @param ctx
+	 * @param newModuleJarFile
+	 * @throws IOException
 	 */
-	private static ByteArrayResource addConfigFile(ModuleDetails details, Resource resource, ResourcePatternResolver ctx) {
-
-		final ByteArrayOutputStream newJarByteStream = new ByteArrayOutputStream();
-
-		try (
-			ZipInputStream inputJarStream = new ZipInputStream(resource.getInputStream());
-			ZipOutputStream newModuleJarFile = new ZipOutputStream(newJarByteStream)) {
-
-			insertConfigFile(details, ctx, newModuleJarFile);
-			insertExtraConfigFiles(details, ctx, newModuleJarFile);
-
-			ZipEntry entry;
-			while ((entry = inputJarStream.getNextEntry()) != null) {
-				passThroughFileEntry(inputJarStream, newModuleJarFile, entry);
-			}
-
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		return new ByteArrayResource(newJarByteStream.toByteArray(), "In memory JAR file for " + details.getName());
-	}
-
-	private static void insertConfigFile(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
-		JarEntry newEntry = new JarEntry(details.getName() + ".yml");
-		newEntry.setTime(System.currentTimeMillis());
-		newModuleJarFile.putNextEntry(newEntry);
-
-		final String locationPattern = "classpath*:**/" + details.getArtifact() + "/config/" + details.getName() + ".yml";
-		final Resource[] configFiles = ctx.getResources(locationPattern);
-
-		Stream.of(configFiles)
-				.findFirst()
-				.ifPresent(resource -> {
-					try {
-						log.info("Deploying " + resource.getFilename() + " found at " + resource.getURI().toString());
-						StreamUtils.copy(resource.getInputStream(), newModuleJarFile);
-						newModuleJarFile.closeEntry();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				});
-	}
-
-	private static void insertExtraConfigFiles(ModuleDetails details, ResourcePatternResolver ctx, ZipOutputStream newModuleJarFile) throws IOException {
+	private static void insertExtraConfigFiles(ModuleDetails details, ResourcePatternResolver ctx, JarOutputStream newModuleJarFile) throws IOException {
 
 		final String locationPattern = "classpath*:**/" + details.getName() + "-*.yml";
 		final Resource[] configFiles = ctx.getResources(locationPattern);
@@ -523,15 +501,6 @@ public class ModuleService {
 					log.warn("Unable to process " + configFile.getFilename() + " => " + e.getMessage());
 				}
 			});
-	}
-
-	private static void passThroughFileEntry(ZipInputStream zipInputStream, ZipOutputStream newJarFile, ZipEntry entry) throws IOException {
-		JarEntry newEntry = new JarEntry(entry);
-		newJarFile.putNextEntry(newEntry);
-		if (!entry.isDirectory()) {
-			StreamUtils.copy(zipInputStream, newJarFile);
-		}
-		newJarFile.closeEntry();
 	}
 
 }

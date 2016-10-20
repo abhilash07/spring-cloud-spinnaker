@@ -51,7 +51,7 @@ public class TempFileManager {
 
 			Path path = null;
 			try {
-				path = Files.createTempFile(details.getArtifact(), ".jar");
+				path = Files.createTempFile(details.getName()+"-app", ".jar");
 				log.info("Dumping JAR contents to " + path);
 				Files.write(path, streamedArtifact.getByteArray());
 				path.toFile().deleteOnExit();

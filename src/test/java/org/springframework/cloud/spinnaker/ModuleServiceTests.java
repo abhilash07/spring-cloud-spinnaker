@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -306,7 +307,9 @@ public class ModuleServiceTests {
 		MavenProperties mavenProperties() throws IOException {
 
 			MavenProperties properties = new MavenProperties();
-			properties.setLocalRepository(Files.createTempDirectory("spring-cloud-spinnaker-tests-").toString());
+			Path tempDirectory = Files.createTempDirectory("spring-cloud-spinnaker-tests-");
+			tempDirectory.toFile().deleteOnExit();
+			properties.setLocalRepository(tempDirectory.toString());
 			properties.getRemoteRepositories().put("spring-snapshots", new MavenProperties.RemoteRepository("http://repo.spring.io/snapshot"));
 //			properties.getRemoteRepositories().put("spring-milestones", new MavenProperties.RemoteRepository("http://repo.spring.io/milestone"));
 //			properties.getRemoteRepositories().put("spring-releases", new MavenProperties.RemoteRepository("http://repo.spring.io/release"));
