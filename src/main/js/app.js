@@ -56,7 +56,12 @@ class Application extends React.Component {
 			domains: 'domain.names',
 			'domain.names': [],
 			domainsLoading: false,
-
+			secondAccount: 'second.clouddriveraccount.enabled',
+			'providers.cf.secondaryCredentials.name': '',
+			'providers.cf.secondaryCredentials.api': '',
+			'providers.cf.secondaryCredentials.console': '',
+			'providers.cf.secondaryCredentials.org': '',
+			'providers.cf.secondaryCredentials.space': ''
 		}
 		this.removeEntry = this.removeEntry.bind(this)
 		this.updateSetting = this.updateSetting.bind(this)
@@ -89,12 +94,15 @@ class Application extends React.Component {
 		 */
 		if (key === this.state.api) {
 			newState['providers.cf.primaryCredentials.api'] = value
+			newState['providers.cf.secondaryCredentials.api'] = value
 		}
 		if (key === this.state.org) {
 			newState['providers.cf.defaultOrg'] = value
+			newState['providers.cf.secondaryCredentials.org'] = value
 		}
 		if (key === this.state.space) {
 			newState['providers.cf.defaultSpace'] = value
+			newState['providers.cf.secondaryCredentials.space'] = value
 		}
 		if (key === this.state.email) {
 			newState[this.state.accountName] = value
@@ -103,7 +111,17 @@ class Application extends React.Component {
 			newState[this.state.accountPassword] = value
 		}
 		if (key === this.state.primaryAccount) {
-			newState[this.state.primaryAccounts] = value
+			if (this.state[this.state.secondAccount]) {
+				newState[this.state.primaryAccounts] = value + "," + this.state['providers.cf.secondaryCredentials.name']
+			} else {
+				newState[this.state.primaryAccounts] = value
+			}
+		}
+		if (key === 'providers.cf.secondaryCredentials.name') {
+			newState[this.state.primaryAccounts] = this.state[this.state.primaryAccount] + "," + value
+		}
+		if (key === 'providers.cf.secondaryCredentials.name') {
+			newState['providers.cf.secondaryCredentials.space'] = value
 		}
 
 		/**
@@ -111,6 +129,7 @@ class Application extends React.Component {
 		 */
 		if (key === this.state.api && value === 'https://api.run.pivotal.io') {
 			newState[this.state.console] = 'https://console.run.pivotal.io'
+			newState['providers.cf.secondaryCredentials.console'] = 'https://console.run.pivotal.io'
 		}
 
 		/**

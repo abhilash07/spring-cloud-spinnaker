@@ -25,11 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -37,6 +40,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -168,6 +172,16 @@ public class ModuleService {
 
 		Optional.ofNullable(details.getProperties().get("disk"))
 			.ifPresent(disk -> deploymentProperties.put(CloudFoundryDeploymentProperties.DISK_PROPERTY_KEY, disk));
+
+		// Load up on Spring profiles!
+		Set<String> profiles = StringUtils.commaDelimitedListToSet(properties.getOrDefault("spring.profiles.active", ""));
+		profiles.addAll(StringUtils.commaDelimitedListToSet(data.getOrDefault("extra.profiles", "")));
+		if (profiles.size() > 0) {
+			log.debug("Configuring " + details.getName() + " with the following Spring profiles: " + profiles);
+			properties.put("spring.profiles.active", StringUtils.collectionToCommaDelimitedString(profiles));
+		} else {
+			System.out.println(details.getName() + " has no Spring profiles.");
+		}
 
 		CloudFoundryAppDeployer appDeployer = appDeployerFactory.getAppDeployer(apiEndpoint, org, space, email, password, namespace);
 
@@ -434,8 +448,8 @@ public class ModuleService {
 								artifactOutputStream.closeEntry();
 
 								// If we have just copied the module's yml file, add any other module-specific ones.
-								if (e.getName().equals(details.getName() + ".yml")) {
-									insertExtraConfigFiles(details, ctx, artifactOutputStream);
+								if (e.getName().endsWith(details.getName() + ".yml")) {
+									insertExtraConfigFiles(e, details, ctx, artifactOutputStream);
 								}
 							} catch (IOException e1) {
 								throw new RuntimeException(e1);
@@ -479,23 +493,36 @@ public class ModuleService {
 	 *
 	 * TODO: Remove this and replace with SPRING_APPLICATION_JSON when module moved to Spring Boot 1.4
 	 *
+	 *
+	 * @param entry
 	 * @param details
 	 * @param ctx
 	 * @param newModuleJarFile
 	 * @throws IOException
 	 */
-	private static void insertExtraConfigFiles(ModuleDetails details, ResourcePatternResolver ctx, JarOutputStream newModuleJarFile) throws IOException {
+	private static void insertExtraConfigFiles(ZipEntry entry, ModuleDetails details, ResourcePatternResolver ctx, JarOutputStream newModuleJarFile) throws IOException {
 
 		final String locationPattern = "classpath*:**/" + details.getName() + "-*.yml";
 		final Resource[] configFiles = ctx.getResources(locationPattern);
 		Stream.of(configFiles)
 			.forEach(configFile -> {
 				try {
-					log.info("Adding " + configFile.getFilename() + " to " + details.getName() + " found at " + configFile.getURI().toString());
-					JarEntry newEntry = new JarEntry(configFile.getFilename());
+					log.info("Parsing " + configFile.getFilename() + " along with " + entry.getName() + " to add custom YAML files.");
+
+					String newPropFilename = configFile.getFile().getName();
+					Path folder = Paths.get(entry.getName()).getParent();
+					String newPathEntry = Optional.ofNullable(folder)
+						.map(path -> path.resolve(newPropFilename).toString())
+						.orElse(newPropFilename);
+
+					log.info("Adding " + newPathEntry + " to " + details.getName() + " found at " + configFile.getURI().toString());
+
+					JarEntry newEntry = new JarEntry(newPathEntry);
 					newEntry.setTime(System.currentTimeMillis());
 					newModuleJarFile.putNextEntry(newEntry);
+
 					StreamUtils.copy(configFile.getInputStream(), newModuleJarFile);
+
 					newModuleJarFile.closeEntry();
 				} catch (IOException e) {
 					log.warn("Unable to process " + configFile.getFilename() + " => " + e.getMessage());

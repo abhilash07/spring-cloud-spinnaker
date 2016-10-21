@@ -167,6 +167,11 @@ class Settings extends React.Component {
 									onClick={this.toggleOn}>Pick from a list</button>
 						</li>
 					}
+					<TextInput label="Primary Account Name"
+							   placeHolder="Name of the primary account (e.g. prod)"
+							   name='deck.primaryAccount'
+							   handleChange={this.handleChange}
+							   settings={this.props.settings} />
 					<TextInput label="Default Org"
 							   placeHolder="Primary organization Spinnaker will deploy to"
 							   name="providers.cf.defaultOrg"
@@ -187,6 +192,41 @@ class Settings extends React.Component {
 							   name="providers.cf.primaryCredentials.console"
 							   handleChange={this.handleChange}
 							   settings={this.props.settings} />
+					<CheckboxInput label="Second Account?"
+								   name={this.props.settings.secondAccount}
+								   handleChange={this.handleChange}
+								   settings={this.props.settings} />
+					{ this.props.settings[this.props.settings.secondAccount] ?
+						<div>
+							<TextInput label="Secondary Account Name"
+									   placeHolder="Name of the secondary account (e.g. staging)"
+									   name='providers.cf.secondaryCredentials.name'
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+							<TextInput label="Secondary Org"
+									   placeHolder="Secondary organization Spinnaker will deploy to"
+									   name="providers.cf.secondaryCredentials.org"
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+							<TextInput label="Secondary Space"
+									   placeHolder="Secondary space Spinnaker will deploy to"
+									   name="providers.cf.secondaryCredentials.space"
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+							<TextInput label="Secondary Account API"
+									   placeHolder="Secondary API for Spinnaker to make deployments"
+									   name="providers.cf.secondaryCredentials.api"
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+							<TextInput label="Secondary Account Console"
+									   placeHolder="e.g. https://console.run.pivotal.io or https://apps.example.com"
+									   name="providers.cf.secondaryCredentials.console"
+									   handleChange={this.handleChange}
+									   settings={this.props.settings} />
+						</div>
+						:
+						null
+					}
 					<TextInput label="Account Name"
 							   placeHolder="User id for making deployments"
 							   name={this.props.settings.accountName}
@@ -357,11 +397,6 @@ class Settings extends React.Component {
 									   data={this.listDomains}
 									   settings={this.props.settings}/>
 					}
-					<TextInput label="Primary Account Name"
-							   placeHolder="Name of the primary account (e.g. prod)"
-							   name='deck.primaryAccount'
-							   handleChange={this.handleChange}
-							   settings={this.props.settings} />
 					<TextInput label="All Account Names (separated by commas)"
 							   placeHolder="Listing of all accounts (e.g. prod,staging,dev)"
 							   name='deck.primaryAccounts'

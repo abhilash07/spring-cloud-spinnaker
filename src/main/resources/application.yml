@@ -95,3 +95,7 @@ logging:
         cloud:
           deployer: DEBUG
           spinnaker: DEBUG
+spring:
+  devtools:
+    restart:
+      additional-paths: target/classes/static/built

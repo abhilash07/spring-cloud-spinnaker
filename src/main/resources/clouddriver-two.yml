@@ -1,0 +1,20 @@
+cf:
+  accounts:
+    - name: ${providers.cf.primaryCredentials.name}
+      api: ${providers.cf.primaryCredentials.api}
+      console: ${providers.cf.primaryCredentials.console}
+      org: ${providers.cf.defaultOrg}
+      space: ${providers.cf.defaultSpace}
+      username: ${cf.account.name}
+      password: ${cf.account.password}
+      artifactUsername: ${cf.repo.username}
+      artifactPassword: ${cf.repo.password}
+    - name: ${providers.cf.secondaryCredentials.name}
+      api: ${providers.cf.secondaryCredentials.api}
+      console: ${providers.cf.secondaryCredentials.console}
+      org: ${providers.cf.secondaryCredentials.org}
+      space: ${providers.cf.secondaryCredentials.space}
+      username: ${cf.account.name}
+      password: ${cf.account.password}
+      artifactUsername: ${cf.repo.username}
+      artifactPassword: ${cf.repo.password}

@@ -71,6 +71,14 @@ class Modules extends React.Component {
 			data[this.props.settings.accountPassword] = this.props.settings[this.props.settings.accountPassword]
 			data[this.props.settings.repoUsername] = this.props.settings[this.props.settings.repoUsername]
 			data[this.props.settings.repoPassword] = this.props.settings[this.props.settings.repoPassword]
+			if (this.props.settings[this.props.settings.secondAccount]) {
+				data['providers.cf.secondaryCredentials.name'] = this.props.settings['providers.cf.secondaryCredentials.name']
+				data['providers.cf.secondaryCredentials.api'] = this.props.settings['providers.cf.secondaryCredentials.api']
+				data['providers.cf.secondaryCredentials.console'] = this.props.settings['providers.cf.secondaryCredentials.console']
+				data['providers.cf.secondaryCredentials.org'] = this.props.settings['providers.cf.secondaryCredentials.org']
+				data['providers.cf.secondaryCredentials.space'] = this.props.settings['providers.cf.secondaryCredentials.space']
+				data['extra.profiles'] = 'two'
+			}
 		}
 
 		if (!moduleDetails.deploymentId.startsWith('deck')) { // If NOT deck...
