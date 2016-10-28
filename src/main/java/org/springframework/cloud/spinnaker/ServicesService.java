@@ -25,12 +25,17 @@ import java.util.Optional;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationsRequest;
+import org.cloudfoundry.client.v2.serviceinstances.ListServiceInstancesRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpacesRequest;
+import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.domains.Domain;
+import org.cloudfoundry.operations.services.GetServiceInstanceRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.cloudfoundry.operations.spaces.GetSpaceRequest;
 import org.cloudfoundry.util.PaginationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -52,26 +57,48 @@ public class ServicesService {
 		this.appDeployerFactory = appDeployerFactory;
 	}
 
-	public List<ServiceInstance> getServices(String serviceType, String email, String password, URL apiEndpoint, String org, String space) {
+	public List<ServiceInstance> requestServices(String serviceType, String email, String password, URL apiEndpoint, String org, String space) {
 
 		String token = Optional.ofNullable(serviceType)
 			.map(String::toLowerCase)
 			.orElse("");
 
-		return appDeployerFactory.getOperations(email, password, apiEndpoint, org, space)
-			.services()
-				.listInstances()
-				.filter(serviceInstance ->
-					Optional.ofNullable(serviceInstance.getDescription()).map(String::toLowerCase).orElse("")
-						.contains(token)
-						||
-						Optional.ofNullable(serviceInstance.getService()).map(String::toLowerCase).orElse("")
-							.contains(token))
-				.collectList()
-				.block(Duration.ofSeconds(60));
+		CloudFoundryClient cloudFoundryClient = appDeployerFactory.getCloudFoundryClient(email, password, apiEndpoint);
+		CloudFoundryOperations operations = appDeployerFactory.getOperations(email, password, apiEndpoint, org, space);
+
+		return operations
+			.spaces()
+			.get(GetSpaceRequest.builder()
+				.name(space)
+				.build())
+			.flatMap(spaceDetail ->
+				PaginationUtils.requestClientV2Resources(page -> cloudFoundryClient.serviceInstances()
+					.list(ListServiceInstancesRequest.builder()
+						.page(page)
+						.spaceId(spaceDetail.getId())
+						.build())))
+			.flatMap(serviceInstanceResource -> operations.services()
+				.getInstance(GetServiceInstanceRequest.builder()
+					.name(serviceInstanceResource.getEntity().getName())
+					.build())
+				.otherwise(throwable -> {
+					log.error("Couldn't look up service " +
+						serviceInstanceResource.getEntity().getName() +
+						" => " +
+						throwable.getMessage());
+					return Mono.empty();
+				}))
+			.filter(serviceInstance ->
+				Optional.ofNullable(serviceInstance.getDescription()).map(String::toLowerCase).orElse("")
+					.contains(token)
+					||
+				Optional.ofNullable(serviceInstance.getService()).map(String::toLowerCase).orElse("")
+					.contains(token))
+			.collectList()
+			.block(Duration.ofSeconds(60));
 	}
 
-	public Map<String, List<String>> getOrgs(String email, String password, URL apiEndpoint) {
+	public Map<String, List<String>> requestOrgs(String email, String password, URL apiEndpoint) {
 
 		CloudFoundryClient cloudFoundryClient = appDeployerFactory.getCloudFoundryClient(email, password, apiEndpoint);
 
@@ -101,7 +128,7 @@ public class ServicesService {
 		return combined;
 	}
 
-	public List<Domain> getDomains(String email, String password, URL apiEndpoint, String org, String space) {
+	public List<Domain> requestDomains(String email, String password, URL apiEndpoint, String org, String space) {
 
 		return appDeployerFactory.getOperations(email, password, apiEndpoint, org, space)
 			.domains()

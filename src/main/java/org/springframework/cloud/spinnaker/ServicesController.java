@@ -49,7 +49,7 @@ public class ServicesController {
 										  @RequestParam("password") String password) {
 
 		return ResponseEntity.ok(new Resources<>(
-			this.servicesService.getServices(serviceType, email, password, apiEndpoint, org, space),
+			this.servicesService.requestServices(serviceType, email, password, apiEndpoint, org, space),
 			linkTo(methodOn(ServicesController.class).listServices(serviceType, apiEndpoint, org, space, email, password)).withSelfRel()));
 	}
 
@@ -59,7 +59,7 @@ public class ServicesController {
 									  @RequestParam("password") String password) {
 
 		return ResponseEntity.ok(new Resource<>(
-			this.servicesService.getOrgs(email, password, apiEndpoint),
+			this.servicesService.requestOrgs(email, password, apiEndpoint),
 			linkTo(methodOn(ServicesController.class).listOrgs(apiEndpoint, email, password)).withSelfRel()));
 	}
 
@@ -71,7 +71,7 @@ public class ServicesController {
 										 @RequestParam("space") String space) {
 
 		return ResponseEntity.ok(new Resources<>(
-			this.servicesService.getDomains(email, password, apiEndpoint, org, space),
+			this.servicesService.requestDomains(email, password, apiEndpoint, org, space),
 			linkTo(methodOn(ServicesController.class).listDomains(apiEndpoint, email, password, org, space)).withSelfRel()));
 	}
 
