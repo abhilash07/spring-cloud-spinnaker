@@ -1,17 +1,28 @@
 'use strict';
 
-function follow(api, rootPath, relArray) {
-	var root = api({
-		method: 'GET',
-		path: rootPath
-	});
+function follow(api, rootPath, relArray, headers) {
+
+	var root
+
+	if (headers) {
+		root = api({
+			method: 'GET',
+			path: rootPath,
+			headers: headers
+		});
+	} else {
+		root = api({
+			method: 'GET',
+			path: rootPath
+		});
+	}
 
 	return relArray.reduce(function(root, arrayItem) {
 		var rel = typeof arrayItem === 'string' ? arrayItem : arrayItem.rel;
-		return traverseNext(root, rel, arrayItem);
+		return traverseNext(root, rel, arrayItem, headers);
 	}, root);
 
-	function traverseNext (root, rel, arrayItem) {
+	function traverseNext (root, rel, arrayItem, headers) {
 		return root.then(function (response) {
 			if (hasEmbeddedRel(response.entity, rel)) {
 				return response.entity._embedded[rel];
@@ -22,16 +33,33 @@ function follow(api, rootPath, relArray) {
 			}
 
 			if (typeof arrayItem === 'string') {
-				return api({
-					method: 'GET',
-					path: response.entity._links[rel].href
-				});
+				if (headers) {
+					return api({
+						method: 'GET',
+						path: response.entity._links[rel].href,
+						headers: headers
+					});
+				} else {
+					return api({
+						method: 'GET',
+						path: response.entity._links[rel].href
+					});
+				}
 			} else {
-				return api({
-					method: 'GET',
-					path: response.entity._links[rel].href,
-					params: arrayItem.params
-				});
+				if (headers) {
+					return api({
+						method: 'GET',
+						path: response.entity._links[rel].href,
+						params: arrayItem.params,
+						headers: headers
+					});
+				} else {
+					return api({
+						method: 'GET',
+						path: response.entity._links[rel].href,
+						params: arrayItem.params
+					});
+				}
 			}
 		});
 	}

@@ -15,8 +15,7 @@
  */
 package org.springframework.cloud.spinnaker;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
 
 import java.io.IOException;
 import java.net.URL;
@@ -32,9 +31,9 @@ import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -52,12 +51,12 @@ public class ModuleController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/modules", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> statuses(@RequestParam("api") URL api,
-									  @RequestParam("org") String org,
-									  @RequestParam("space") String space,
-									  @RequestParam("email") String email,
-									  @RequestParam("password") String password,
-									  @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+	public ResponseEntity<?> statuses(@RequestHeader("api") URL api,
+									  @RequestHeader("org") String org,
+									  @RequestHeader("space") String space,
+									  @RequestHeader("email") String email,
+									  @RequestHeader("password") String password,
+									  @RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		return ResponseEntity.ok(new Resources<>(
 			moduleService.getStatuses(api, org, space, email, password, namespace)
@@ -73,12 +72,12 @@ public class ModuleController {
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/modules/{module}", produces = MediaTypes.HAL_JSON_VALUE)
 	public ResponseEntity<?> status(@PathVariable String module,
-									@RequestParam("api") URL api,
-									@RequestParam("org") String org,
-									@RequestParam("space") String space,
-									@RequestParam("email") String email,
-									@RequestParam("password") String password,
-									@RequestParam(value = "namespace", defaultValue = "") String namespace) {
+									@RequestHeader("api") URL api,
+									@RequestHeader("org") String org,
+									@RequestHeader("space") String space,
+									@RequestHeader("email") String email,
+									@RequestHeader("password") String password,
+									@RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		return ResponseEntity.ok(new Resource<>(
 			moduleService.getStatus(module, api, org, space, email, password, namespace),
@@ -92,12 +91,12 @@ public class ModuleController {
 
 	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}")
 	public ResponseEntity<?> deploy(@PathVariable String module,
-									@RequestParam("api") URL api,
-									@RequestParam("org") String org,
-									@RequestParam("space") String space,
-									@RequestParam("email") String email,
-									@RequestParam("password") String password,
-									@RequestParam(value = "namespace", defaultValue = "") String namespace,
+									@RequestHeader("api") URL api,
+									@RequestHeader("org") String org,
+									@RequestHeader("space") String space,
+									@RequestHeader("email") String email,
+									@RequestHeader("password") String password,
+									@RequestHeader(value = "namespace", defaultValue = "") String namespace,
 									@RequestBody Map<String, String> data) throws IOException {
 
 		moduleService.deploy(module, data, api, org, space, email, password, namespace);
@@ -107,12 +106,12 @@ public class ModuleController {
 
 	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}/start")
 	public ResponseEntity<?> start(@PathVariable String module,
-								   @RequestParam("api") URL api,
-								   @RequestParam("org") String org,
-								   @RequestParam("space") String space,
-								   @RequestParam("email") String email,
-								   @RequestParam("password") String password,
-								   @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+								   @RequestHeader("api") URL api,
+								   @RequestHeader("org") String org,
+								   @RequestHeader("space") String space,
+								   @RequestHeader("email") String email,
+								   @RequestHeader("password") String password,
+								   @RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		moduleService.start(module, api, org, space, email, password, namespace);
 		return ResponseEntity.noContent().build();
@@ -120,12 +119,12 @@ public class ModuleController {
 
 	@RequestMapping(method = RequestMethod.POST, value = ApiController.BASE_PATH + "/modules/{module}/stop")
 	public ResponseEntity<?> stop(@PathVariable String module,
-								   @RequestParam("api") URL api,
-								   @RequestParam("org") String org,
-								   @RequestParam("space") String space,
-								   @RequestParam("email") String email,
-								   @RequestParam("password") String password,
-								   @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+								   @RequestHeader("api") URL api,
+								   @RequestHeader("org") String org,
+								   @RequestHeader("space") String space,
+								   @RequestHeader("email") String email,
+								   @RequestHeader("password") String password,
+								   @RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		moduleService.stop(module, api, org, space, email, password, namespace);
 		return ResponseEntity.noContent().build();
@@ -133,12 +132,12 @@ public class ModuleController {
 
 	@RequestMapping(method = RequestMethod.DELETE, value = ApiController.BASE_PATH + "/modules/{module}")
 	public ResponseEntity<?> undeploy(@PathVariable String module,
-									  @RequestParam("api") URL api,
-									  @RequestParam("org") String org,
-									  @RequestParam("space") String space,
-									  @RequestParam("email") String email,
-									  @RequestParam("password") String password,
-									  @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+									  @RequestHeader("api") URL api,
+									  @RequestHeader("org") String org,
+									  @RequestHeader("space") String space,
+									  @RequestHeader("email") String email,
+									  @RequestHeader("password") String password,
+									  @RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		log.debug("Deleting " + module + " on the server...");
 

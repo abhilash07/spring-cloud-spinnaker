@@ -48,9 +48,15 @@ class SpinnakerSettings extends React.Component {
 		let email = this.props.settings[this.props.settings.email]
 		let password = this.props.settings[this.props.settings.password]
 
-		let root = '/api?api=' + api + '&email=' + email + '&password=' + password
+		let root = '/api'
 
-		follow(client, root, ['orgs']).done(response => {
+		let credentials = {
+			api: api,
+			email: email,
+			password: password
+		}
+
+		follow(client, root, ['orgs'], credentials).done(response => {
 			this.props.updateSetting('orgsAndSpacesLoading', false)
 
 			let orgsAndSpaces = response.entity.content

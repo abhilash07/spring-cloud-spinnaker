@@ -61,9 +61,18 @@ class Settings extends React.Component {
 		let email = this.props.settings[this.props.settings.email]
 		let password = this.props.settings[this.props.settings.password]
 
-		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
+		let root = '/api'
 
-		follow(client, root, [{rel: 'services', params: {serviceType: 'redis'}}]).done(response => {
+		let credentials = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+
+		follow(client, root, [{rel: 'services', params: {serviceType: 'redis'}}], credentials).done(response => {
 			this.props.updateSetting('redisLoading', false)
 
 			let redisInstanceNames = response.entity._embedded.serviceInstances.map(serviceInstance => serviceInstance.name);
@@ -105,9 +114,17 @@ class Settings extends React.Component {
 		let email = this.props.settings[this.props.settings.email]
 		let password = this.props.settings[this.props.settings.password]
 
-		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
+		let root = '/api'
 
-		follow(client, root, ['domains']).done(response => {
+		let credentials = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password
+		}
+
+		follow(client, root, ['domains'], credentials).done(response => {
 			this.props.updateSetting('domainsLoading', false)
 
 			let domainNames = response.entity._embedded.domains.map(domain => domain.name);

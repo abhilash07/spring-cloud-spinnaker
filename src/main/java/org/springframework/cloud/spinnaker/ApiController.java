@@ -22,9 +22,9 @@ import java.net.URL;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.ResourceSupport;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -36,12 +36,12 @@ public class ApiController {
 	public static final String BASE_PATH = "/api";
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH, produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> root(@RequestParam("api") URL api,
-								  @RequestParam(value = "org", defaultValue = "") String org,
-								  @RequestParam(value = "space", defaultValue = "") String space,
-								  @RequestParam("email") String email,
-								  @RequestParam("password") String password,
-								  @RequestParam(value = "namespace", defaultValue = "") String namespace) {
+	public ResponseEntity<?> root(@RequestHeader("api") URL api,
+								  @RequestHeader(value = "org", defaultValue = "") String org,
+								  @RequestHeader(value = "space", defaultValue = "") String space,
+								  @RequestHeader("email") String email,
+								  @RequestHeader("password") String password,
+								  @RequestHeader(value = "namespace", defaultValue = "") String namespace) {
 
 		ResourceSupport root = new ResourceSupport();
 

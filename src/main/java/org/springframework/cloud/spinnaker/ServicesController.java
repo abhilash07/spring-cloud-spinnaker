@@ -23,9 +23,9 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -41,12 +41,12 @@ public class ServicesController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/services", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> listServices(@RequestParam(value = "serviceType", defaultValue = "") String serviceType,
-										  @RequestParam("api") URL apiEndpoint,
-										  @RequestParam("org") String org,
-										  @RequestParam("space") String space,
-										  @RequestParam("email") String email,
-										  @RequestParam("password") String password) {
+	public ResponseEntity<?> listServices(@RequestHeader(value = "serviceType", defaultValue = "") String serviceType,
+										  @RequestHeader("api") URL apiEndpoint,
+										  @RequestHeader("org") String org,
+										  @RequestHeader("space") String space,
+										  @RequestHeader("email") String email,
+										  @RequestHeader("password") String password) {
 
 		return ResponseEntity.ok(new Resources<>(
 			this.servicesService.requestServices(serviceType, email, password, apiEndpoint, org, space),
@@ -54,9 +54,9 @@ public class ServicesController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/orgs", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> listOrgs(@RequestParam("api") URL apiEndpoint,
-									  @RequestParam("email") String email,
-									  @RequestParam("password") String password) {
+	public ResponseEntity<?> listOrgs(@RequestHeader("api") URL apiEndpoint,
+									  @RequestHeader("email") String email,
+									  @RequestHeader("password") String password) {
 
 		return ResponseEntity.ok(new Resource<>(
 			this.servicesService.requestOrgs(email, password, apiEndpoint),
@@ -64,11 +64,11 @@ public class ServicesController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/domains", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> listDomains(@RequestParam("api") URL apiEndpoint,
-										 @RequestParam("email") String email,
-										 @RequestParam("password") String password,
-										 @RequestParam("org") String org,
-										 @RequestParam("space") String space) {
+	public ResponseEntity<?> listDomains(@RequestHeader("api") URL apiEndpoint,
+										 @RequestHeader("email") String email,
+										 @RequestHeader("password") String password,
+										 @RequestHeader("org") String org,
+										 @RequestHeader("space") String space) {
 
 		return ResponseEntity.ok(new Resources<>(
 			this.servicesService.requestDomains(email, password, apiEndpoint, org, space),

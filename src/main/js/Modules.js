@@ -37,10 +37,18 @@ class Modules extends React.Component {
 		let password = this.props.settings[this.props.settings.password]
 		let namespace = this.getNamespace()
 
-		let root = '/api?api=' + api + '&org=' + org + '&space=' + space + '&email=' + email + '&password=' + password
-			+ (namespace !== '' ? '&namespace=' + namespace : '')
+		let root = '/api'
 
-		follow(client, root, ['modules']).done(response => {
+		let credentials = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+
+		follow(client, root, ['modules'], credentials).done(response => {
 			this.setState({modules: response.entity._embedded.appStatuses.reduce((prev, curr) => {
 				prev[curr.deploymentId] = curr
 				return prev
@@ -49,7 +57,22 @@ class Modules extends React.Component {
 	}
 
 	refresh(moduleDetails) {
-		client({method: 'GET', path: moduleDetails._links.self.href}).done(response => {
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.getNamespace()
+
+		let credentials = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+		client({method: 'GET', path: moduleDetails._links.self.href, headers: credentials}).done(response => {
 			let newModules = this.state.modules
 			newModules[response.entity.deploymentId] = response.entity
 			this.setState({modules: newModules})
@@ -136,18 +159,51 @@ class Modules extends React.Component {
 		data[this.props.settings.domain] = this.props.settings[this.props.settings.domain]
 		data['namespace'] = this.getNamespace()
 
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.getNamespace()
+
+		let headers = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : ''),
+			'Content-Type': 'application/json'
+		}
+
 		client({
 			method: 'POST',
 			path: moduleDetails._links.self.href,
 			entity: data,
-			headers: {'Content-Type': 'application/json'}}).done(success => {
-
+			headers: headers
+		}).done(success => {
 			this.refresh(moduleDetails)
 		})
 	}
 
 	undeploy(moduleDetails) {
-		client({method: 'DELETE', path: moduleDetails._links.self.href}).done(success => {
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.getNamespace()
+
+		let headers = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+
+		client({method: 'DELETE', path: moduleDetails._links.self.href, headers: headers}).done(success => {
 			this.refresh(moduleDetails)
 		}, failure => {
 			alert('FAILURE: ' + failure.entity.message)
@@ -155,7 +211,23 @@ class Modules extends React.Component {
 	}
 
 	start(moduleDetails) {
-		client({method: 'POST', path: moduleDetails._links.start.href}).done(success => {
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.getNamespace()
+
+		let headers = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+
+		client({method: 'POST', path: moduleDetails._links.start.href, headers: headers}).done(success => {
 			this.refresh(moduleDetails)
 		}, failure => {
 			alert('FAILURE: ' + failure.entity.message)
@@ -163,7 +235,23 @@ class Modules extends React.Component {
 	}
 
 	stop(moduleDetails) {
-		client({method: 'POST', path: moduleDetails._links.stop.href}).done(success => {
+		let api = this.props.settings[this.props.settings.api]
+		let org = this.props.settings[this.props.settings.org]
+		let space = this.props.settings[this.props.settings.space]
+		let email = this.props.settings[this.props.settings.email]
+		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.getNamespace()
+
+		let headers = {
+			api: api,
+			org: org,
+			space: space,
+			email: email,
+			password: password,
+			namespace: (namespace !== '' ? namespace : '')
+		}
+
+		client({method: 'POST', path: moduleDetails._links.stop.href, headers: headers}).done(success => {
 			this.refresh(moduleDetails)
 		}, failure => {
 			alert('FAILURE: ' + failure.entity.message)
