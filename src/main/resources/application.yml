@@ -1,13 +1,13 @@
 spinnaker:
   modules:
     - name: clouddriver
-      artifact: org.springframework.cloud:clouddriver-app:1.0.0.BUILD-SNAPSHOT
+      artifact: org.springframework.spinnaker:clouddriver-app:1.0.0.BUILD-SNAPSHOT
       properties:
         memory: 4096
         disk: 2048
         cf.asyncOperationTimeoutSecondsDefault: 1200 # 20 minutes
     - name: deck
-      artifact: com.netflix.spinnaker.deck:deck-ui:2.803.0
+      artifact: org.springframework.spinnaker.deck:deck-ui:2.924.0-SNAPSHOT
       properties:
         buildpack: staticfile_buildpack
     - name: echo
