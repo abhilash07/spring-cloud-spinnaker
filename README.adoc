@@ -52,7 +52,6 @@ To do a release (.RELEASE, .RC?, .M?):
 . Check in all changes and ensure there are no edited files.
 . Bump up the version in `pom.xml` to the desired version and commit the change.
 . `git tag <version>` (like v1.0.0.M1)
-. `./build_spinnaker.sh all`
 . Execute a maven deploy.
 * For a milestone: `USERNAME=<user> PASSWORD=<enc artifactory password> ./mvnw -Pdistribute,gpg,milestone,docs clean deploy`
 * For a release: `USERNAME=<user> PASSWORD=<enc artifactory password> ./mvnw -Pdistribute,gpg,release,docs clean deploy`
