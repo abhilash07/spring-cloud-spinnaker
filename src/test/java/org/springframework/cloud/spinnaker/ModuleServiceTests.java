@@ -311,7 +311,7 @@ public class ModuleServiceTests {
 			tempDirectory.toFile().deleteOnExit();
 			properties.setLocalRepository(tempDirectory.toString());
 			properties.getRemoteRepositories().put("spring-snapshots", new MavenProperties.RemoteRepository("http://repo.spring.io/snapshot"));
-//			properties.getRemoteRepositories().put("spring-milestones", new MavenProperties.RemoteRepository("http://repo.spring.io/milestone"));
+			properties.getRemoteRepositories().put("spring-milestones", new MavenProperties.RemoteRepository("http://repo.spring.io/milestone"));
 //			properties.getRemoteRepositories().put("spring-releases", new MavenProperties.RemoteRepository("http://repo.spring.io/release"));
 			return properties;
 		}
