@@ -1,7 +1,7 @@
 spinnaker:
   modules:
     - name: clouddriver
-      artifact: org.springframework.spinnaker:clouddriver-app:1.0.1.BUILD-SNAPSHOT
+      artifact: org.springframework.spinnaker:clouddriver-app:1.0.0.BUILD-SNAPSHOT
       properties:
         memory: 4096
         disk: 2048
