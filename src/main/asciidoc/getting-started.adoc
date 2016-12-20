@@ -55,7 +55,7 @@ to wrapping JAR artifacts as http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/
 Before you actually install Spinnaker, you must decide where it will run, i.e. pick an organization and space. You
 also need the following services created as well:
 
-* An instance of Redis in the same space. You will the name of this service later on when you enter all your settings.
+* An instance of Redis in the same space. You will need the name of this service later on when you enter all your settings.
 
 
 == Installing Spinnaker
