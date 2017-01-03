@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -41,7 +42,7 @@ public class ServicesController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = ApiController.BASE_PATH + "/services", produces = MediaTypes.HAL_JSON_VALUE)
-	public ResponseEntity<?> listServices(@RequestHeader(value = "serviceType", defaultValue = "") String serviceType,
+	public ResponseEntity<?> listServices(@RequestParam(value = "serviceType", defaultValue = "") String serviceType,
 										  @RequestHeader("api") URL apiEndpoint,
 										  @RequestHeader("org") String org,
 										  @RequestHeader("space") String space,

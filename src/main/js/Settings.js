@@ -60,6 +60,7 @@ class Settings extends React.Component {
 		let space = this.props.settings[this.props.settings.space]
 		let email = this.props.settings[this.props.settings.email]
 		let password = this.props.settings[this.props.settings.password]
+		let namespace = this.props.settings[this.props.settings.namespace]
 
 		let root = '/api'
 
