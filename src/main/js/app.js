@@ -67,6 +67,7 @@ class Application extends React.Component {
 		this.updateSetting = this.updateSetting.bind(this)
 		this.handleSettings = this.handleSettings.bind(this)
 		this.handleStatus = this.handleStatus.bind(this)
+		this.handleArtifacts = this.handleArtifacts.bind(this)
 		this.tabStatus = this.tabStatus.bind(this)
 		this.settingsStatus = this.settingsStatus.bind(this)
 		this.isActive = this.isActive.bind(this)
@@ -170,6 +171,11 @@ class Application extends React.Component {
 		this.setState({active: 'status'})
 	}
 
+	handleArtifacts(e) {
+		e.preventDefault()
+		this.setState({active: 'artifacts'})
+	}
+
 	isActive(tab) {
 		return ((this.state.active === tab) ? ' active' : '')
 	}
@@ -193,6 +199,9 @@ class Application extends React.Component {
 						<li className={this.tabStatus('status')} onClick={this.handleStatus}>
 							<a id="status-link" className="tabs__link">Status</a>
 						</li>
+						<li className={this.tabStatus('artifacts')} onClick={this.handleArtifacts}>
+							<a id="artifacts-link" className="tabs__link">Artifacts</a>
+						</li>
 					</ul>
 				</section>
 
@@ -211,6 +220,12 @@ class Application extends React.Component {
 					<div id="status" className={this.settingsStatus('status')}>
 						<h1>Spinnaker Status</h1>
 						<Modules settings={this.state} />
+					</div>
+
+					<div id="artifacts" className={this.settingsStatus('artifacts')}>
+						<h1>Spinnaker Artifacts</h1>
+						<textarea value={JSON.stringify(this.state, null, 2)} readOnly="" className="artifacts"/>
+						<a href={'data:application/json;charset=utf-8,' + JSON.stringify(this.state, null, 2)} download="spinnaker.json">Download</a>
 					</div>
 				</section>
 			</div>

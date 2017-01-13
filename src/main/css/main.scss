@@ -199,6 +199,13 @@ tbody tr:nth-child(odd) {
   background-color: $spring-bright-white;
 }
 
+// Style the artifacts panel
+
+textarea.artifacts {
+  width: 100vw;
+  height: 50vh;
+}
+
 /*Classes for creating dialogs*/
 
 .modalDialog {
